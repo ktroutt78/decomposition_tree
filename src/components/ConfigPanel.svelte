@@ -422,6 +422,34 @@
       </div>
     </section>
 
+    <!-- ── Column Headers ───────────────────────────────── -->
+    <section class="config-section">
+      <h3 class="section-title">Column Headers</h3>
+
+      <div class="field-group">
+        <div class="range-header">
+          <label class="field-label" for="headerFontSize">Font size</label>
+          <input
+            id="headerFontSize"
+            type="number"
+            min="9"
+            max="20"
+            bind:value={draft.headerFontSize}
+            class="num-input-sm"
+            aria-label="Column header font size"
+          />
+        </div>
+      </div>
+
+      <label class="color-picker-label">
+        <span class="field-label" style="margin-bottom:0">Color</span>
+        <div class="color-pick-row">
+          <input type="color" bind:value={draft.headerColor} class="color-input" />
+          <span class="color-hex">{draft.headerColor}</span>
+        </div>
+      </label>
+    </section>
+
     <!-- ── Tooltip ──────────────────────────────────────── -->
     <section class="config-section">
       <h3 class="section-title">Tooltip</h3>

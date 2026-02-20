@@ -31,6 +31,8 @@ export const defaultConfig = {
   subheadingColor: '#64748b',
   showMeasureName: true,
   labelMode: 'both',
+  headerFontSize: 12,
+  headerColor: '#334155',
   animationDuration: 300,
   initialAlignment: 'top-left',
   tooltipNarrative: '<measure>: <value>\n% of Parent: <pct>\nRecords: <count>'
