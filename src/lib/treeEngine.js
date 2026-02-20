@@ -97,7 +97,7 @@ export function drillDown(node, dimensionName, encMap, maxChildren = 20, exclude
       label: group.label,
       value: group.value,
       count: group.count,
-      percentOfParent: node.value !== 0 ? (group.value / node.value) * 100 : 0,
+      percentOfParent: node.value !== 0 ? (group.value / Math.abs(node.value)) * 100 : 0,
       depth: node.depth + 1,
       dimensionPath: [...node.dimensionPath, { field: dimensionName, value: group.label }],
       children: null,

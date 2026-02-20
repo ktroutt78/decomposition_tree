@@ -119,7 +119,17 @@
     const nw       = cfg.nodeWidth;
     const BAR_H    = cfg.barHeight ?? 20;
     const { nodeH: nh, barTopY, barCY, text1Y, text2Y } = nodeGeometry(BAR_H);
-    _lastNodeH = nh;
+
+    // TB (top-bottom) vertical bar geometry — used only when !isLR
+    const TB_BAR_W     = 36;                      // vertical bar column width
+    const TB_BAR_MAX_H = 100;                     // bar background height (100% fill)
+    const TB_LABEL_X   = TB_BAR_W / 2 + 8;       // text x: right of bar
+    const TB_BAR_TOP   = -TB_BAR_MAX_H / 2;       // bar top y (relative to node center)
+    const TB_BAR_BOT   =  TB_BAR_MAX_H / 2;       // bar bottom y
+    const TB_EXPAND_CY = TB_BAR_BOT + EXPAND_R + 6; // expand button center y (below bar)
+    const TB_NH        = TB_BAR_MAX_H + EXPAND_R * 2 + 14; // effective node height for layout
+
+    _lastNodeH = isLR ? nh : TB_NH;
     const BAR_R    = cfg.barRadius ?? 4;
     const negColor = cfg.negativeColor || '#f472b6';
     const theme     = COLOR_THEMES[cfg.colorTheme] || COLOR_THEMES.blue;
@@ -163,7 +173,7 @@
     const hier = d3.hierarchy(rootData, visibleChildren);
     d3.tree().nodeSize(
       isLR ? [nh + cfg.siblingSpacing, nw + cfg.levelSpacing]
-           : [nw + cfg.siblingSpacing, nh + cfg.levelSpacing]
+           : [nw + cfg.siblingSpacing, TB_NH + cfg.levelSpacing]
     )(hier);
     if (cfg.initialAlignment === 'top-left' && isLR) topAlignHier(hier, isLR);
 
@@ -214,11 +224,13 @@
       .attr('width', nw).attr('height', BAR_H)
       .attr('rx', BAR_R).attr('fill', BAR_BG_COLOR);
 
-    // Bar fill (colored, animates to percentage width)
-    nodeEnter.append('rect').attr('class', 'bar-fill')
-      .attr('x', -nw / 2).attr('y', barTopY)
-      .attr('height', BAR_H).attr('rx', BAR_R)
-      .attr('width', 0);
+    // Bar fill: LR animates width from left; TB animates height growing upward from bottom
+    const fillEnter = nodeEnter.append('rect').attr('class', 'bar-fill').attr('rx', BAR_R);
+    if (isLR) {
+      fillEnter.attr('x', -nw / 2).attr('y', barTopY).attr('height', BAR_H).attr('width', 0);
+    } else {
+      fillEnter.attr('x', -TB_BAR_W / 2).attr('y', TB_BAR_BOT).attr('width', TB_BAR_W).attr('height', 0);
+    }
 
     // Line 1: "Label (pct%)"
     nodeEnter.append('text').attr('class', 'bar-label')
@@ -242,17 +254,31 @@
 
     nodeUpdate.transition(tLayout).attr('transform', xform);
 
-    // Bar background: update x, width, corner radius
+    // Bar background: update position, size, and corner radius
     nodeUpdate.select('.bar-bg')
-      .attr('x', -nw / 2).attr('width', nw).attr('rx', BAR_R);
+      .attr('x',      isLR ? -nw / 2       : -TB_BAR_W / 2)
+      .attr('y',      isLR ? barTopY        : TB_BAR_TOP)
+      .attr('width',  isLR ? nw             : TB_BAR_W)
+      .attr('height', isLR ? BAR_H          : TB_BAR_MAX_H)
+      .attr('rx', BAR_R)
+      .attr('fill', BAR_BG_COLOR);
 
-    // Bar fill: animate width, color, and corner radius
+    // Bar fill: LR animates width; TB animates height+y (grows upward from bar bottom)
     nodeUpdate.select('.bar-fill')
-      .attr('x', -nw / 2).attr('rx', BAR_R)
+      .attr('x',  isLR ? -nw / 2 : -TB_BAR_W / 2)
+      .attr('rx', BAR_R)
       .transition(tFill)
       .attr('width', d => {
         const pct = Math.max(0, Math.min(100, Math.abs(d.data.percentOfParent ?? 100)));
-        return nw * pct / 100;
+        return isLR ? nw * pct / 100 : TB_BAR_W;
+      })
+      .attr('height', d => {
+        const pct = Math.max(0, Math.min(100, Math.abs(d.data.percentOfParent ?? 100)));
+        return isLR ? BAR_H : TB_BAR_MAX_H * pct / 100;
+      })
+      .attr('y', d => {
+        const pct = Math.max(0, Math.min(100, Math.abs(d.data.percentOfParent ?? 100)));
+        return isLR ? barTopY : TB_BAR_BOT - TB_BAR_MAX_H * pct / 100;
       })
       .attr('fill', d => d.data.value >= 0 ? posColor(d) : negColor);
 
@@ -260,8 +286,8 @@
     //   root  → measure name/alias only (% is always 100%, never shown)
     //   child → label + optional (pct%) based on labelMode
     nodeUpdate.select('.bar-label')
-      .attr('x', -nw / 2 + 6)
-      .attr('y', text1Y)
+      .attr('x', isLR ? -nw / 2 + 6 : TB_LABEL_X)
+      .attr('y', isLR ? text1Y : TB_BAR_TOP + 13)
       .style('font-size', `${fontSize}px`)
       .style('font-family', fontFamily)
       .style('fill', headingColor)
@@ -278,8 +304,8 @@
     //   labelMode 'percent' → empty (value hidden; % is shown on line 1)
     //   otherwise   → value, optionally prefixed with measure name
     nodeUpdate.select('.bar-value-text')
-      .attr('x', -nw / 2 + 6)
-      .attr('y', text2Y)
+      .attr('x', isLR ? -nw / 2 + 6 : TB_LABEL_X)
+      .attr('y', isLR ? text2Y : TB_BAR_TOP + 13 + LINE_H)
       .style('font-size', `${subFontSize}px`)
       .style('font-family', fontFamily)
       .style('fill', subheadColor)
@@ -306,15 +332,15 @@
     };
 
     nodeUpdate.select('.expand-circle')
-      .attr('cx', nw / 2 + EXPAND_R + 2)
-      .attr('cy', barCY)
+      .attr('cx', isLR ? nw / 2 + EXPAND_R + 2 : 0)
+      .attr('cy', isLR ? barCY : TB_EXPAND_CY)
       .attr('visibility', d => showExpand(d) ? 'visible' : 'hidden')
       .transition(tFill)
       .attr('fill', d => isExpanded(d) ? '#94a3b8' : posColor(d));
 
     nodeUpdate.select('.expand-icon')
-      .attr('x', nw / 2 + EXPAND_R + 2)
-      .attr('y', barCY + 5)
+      .attr('x', isLR ? nw / 2 + EXPAND_R + 2 : 0)
+      .attr('y', isLR ? barCY + 5 : TB_EXPAND_CY + 5)
       .attr('visibility', d => showExpand(d) ? 'visible' : 'hidden')
       .text(d => isExpanded(d) ? '−' : '+');
 
@@ -370,25 +396,30 @@
         return `M${sx},${sy}H${mx}V${ty}H${tx}`;
       };
     } else {
-      // TB: source exits bar bottom-center; target enters bar top-center
+      // TB vertical bar: source exits below expand button; target enters bar top
+      const TB_BAR_MAX_H = 100;
+      const TB_EXPAND_CY = TB_BAR_MAX_H / 2 + EXPAND_R + 6;
+      const srcYOff = TB_EXPAND_CY + EXPAND_R + 2; // just below expand button
+      const tgtYOff = -TB_BAR_MAX_H / 2;           // top of child bar bg
+
       if (style === 'curved') {
         return d3.linkVertical()
           .x(d => d.barX)
           .y(d => d.barY)
-          .source(d => ({ barX: d.source.x, barY: d.source.y + nh / 2 }))
-          .target(d => ({ barX: d.target.x, barY: d.target.y - nh / 2 }));
+          .source(d => ({ barX: d.source.x, barY: d.source.y + srcYOff }))
+          .target(d => ({ barX: d.target.x, barY: d.target.y + tgtYOff }));
       }
       if (style === 'straight') {
         return d => {
-          const sx = d.source.x, sy = d.source.y + nh / 2;
-          const tx = d.target.x, ty = d.target.y - nh / 2;
+          const sx = d.source.x, sy = d.source.y + srcYOff;
+          const tx = d.target.x, ty = d.target.y + tgtYOff;
           return `M${sx},${sy}L${tx},${ty}`;
         };
       }
       // step (default)
       return d => {
-        const sx = d.source.x, sy = d.source.y + nh / 2;
-        const tx = d.target.x, ty = d.target.y - nh / 2;
+        const sx = d.source.x, sy = d.source.y + srcYOff;
+        const tx = d.target.x, ty = d.target.y + tgtYOff;
         const my = (sy + ty) / 2;
         return `M${sx},${sy}V${my}H${tx}V${ty}`;
       };
