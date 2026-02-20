@@ -469,7 +469,8 @@
       const drilledSibling = siblings.find(s => s.id !== node.id && s.children?.length > 0);
       const siblingDim = drilledSibling?.children?.[0]?._drillDimension ?? null;
       if (siblingDim) {
-        const updated = drillDown(node, siblingDim, $encodingMap, $config.maxChildrenShown, $config.excludeNulls);
+        const siblingSort = drilledSibling?.children?.[0]?._sortOrder || 'desc';
+        const updated = drillDown(node, siblingDim, $encodingMap, $config.maxChildrenShown, $config.excludeNulls, siblingSort);
         treeRoot.update(root => {
           let r = updateNodeInTree(root, node.id, () => updated);
           return collapseExpandedSiblings(r, siblings, node.id);
@@ -503,10 +504,10 @@
     if (root) doFitToView(root, cfg);
   }
 
-  function handleDrillSelect(dimName) {
+  function handleDrillSelect(dimName, sortOrder = 'desc') {
     if (!$pendingDrillNode) return;
     const pendingNode = $pendingDrillNode;
-    const updated = drillDown(pendingNode, dimName, $encodingMap, $config.maxChildrenShown, $config.excludeNulls);
+    const updated = drillDown(pendingNode, dimName, $encodingMap, $config.maxChildrenShown, $config.excludeNulls, sortOrder);
     treeRoot.update(root => {
       const parent = findParent(root, pendingNode.id);
       const siblings = parent?.children || [];

@@ -5,13 +5,15 @@
 
   import { breakdownFieldNames } from '../stores/encodings.js';
 
+  let sortOrder = 'desc';
+
   // Build the set of dimension names already used in the path to this node
   $: usedDims = new Set((node?.dimensionPath || []).map(p => p.field));
   $: filtered = $breakdownFieldNames.filter(name => !usedDims.has(name));
 
   function handleKey(e) {
     if (e.key === 'Escape') onClose();
-    if (e.key === 'Enter' && filtered.length === 1) onSelect(filtered[0]);
+    if (e.key === 'Enter' && filtered.length === 1) onSelect(filtered[0], sortOrder);
   }
 </script>
 
@@ -35,10 +37,28 @@
     </button>
   </div>
 
+  <div class="sort-row">
+    <span class="sort-label">Sort</span>
+    <div class="sort-btns">
+      <button
+        class="sort-btn"
+        class:active={sortOrder === 'desc'}
+        on:click={() => sortOrder = 'desc'}
+        title="Descending — largest first, negatives last"
+      >↓ Desc</button>
+      <button
+        class="sort-btn"
+        class:active={sortOrder === 'asc'}
+        on:click={() => sortOrder = 'asc'}
+        title="Ascending — negatives first, largest last"
+      >↑ Asc</button>
+    </div>
+  </div>
+
   <ul class="dim-list" role="listbox">
     {#each filtered as name}
       <!-- svelte-ignore a11y-click-events-have-key-events -->
-      <li class="dim-item" role="option" aria-selected="false" on:click={() => onSelect(name)}>
+      <li class="dim-item" role="option" aria-selected="false" on:click={() => onSelect(name, sortOrder)}>
         <svg class="dim-icon" width="12" height="12" viewBox="0 0 12 12" fill="none">
           <rect x="1" y="1" width="10" height="10" rx="2" stroke="currentColor" stroke-width="1.3"/>
           <path d="M3.5 6h5M6 3.5v5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
@@ -135,6 +155,49 @@
   .close-btn:hover {
     background: var(--color-bg);
     color: var(--color-text-primary);
+  }
+
+  .sort-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: var(--space-2) var(--space-4);
+    border-bottom: 1px solid var(--color-border-subtle);
+    gap: var(--space-3);
+  }
+
+  .sort-label {
+    font-size: var(--text-sm);
+    color: var(--color-text-secondary);
+    font-weight: var(--font-medium);
+  }
+
+  .sort-btns {
+    display: flex;
+    gap: 4px;
+  }
+
+  .sort-btn {
+    padding: 4px 10px;
+    border-radius: var(--radius-sm);
+    font-size: var(--text-sm);
+    font-weight: var(--font-medium);
+    color: var(--color-text-secondary);
+    background: var(--color-bg);
+    border: 1px solid var(--color-border);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+  }
+
+  .sort-btn:hover {
+    border-color: var(--color-accent);
+    color: var(--color-accent);
+  }
+
+  .sort-btn.active {
+    background: var(--color-accent);
+    border-color: var(--color-accent);
+    color: white;
   }
 
   .dim-list {

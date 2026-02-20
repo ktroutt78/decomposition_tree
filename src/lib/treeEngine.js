@@ -47,7 +47,7 @@ export function buildRootNode(rows, encMap) {
   };
 }
 
-export function drillDown(node, dimensionName, encMap, maxChildren = 20, excludeNulls = false) {
+export function drillDown(node, dimensionName, encMap, maxChildren = 20, excludeNulls = false, sortOrder = 'desc') {
   const valueField = encMap.value?.[0];
   if (!valueField) return node;
 
@@ -86,7 +86,7 @@ export function drillDown(node, dimensionName, encMap, maxChildren = 20, exclude
   }
 
   const sorted = Array.from(groups.values())
-    .sort((a, b) => Math.abs(b.value) - Math.abs(a.value));
+    .sort((a, b) => sortOrder === 'asc' ? a.value - b.value : b.value - a.value);
 
   const shown  = sorted.slice(0, maxChildren);
   const hidden = sorted.slice(maxChildren);
@@ -105,7 +105,8 @@ export function drillDown(node, dimensionName, encMap, maxChildren = 20, exclude
       _rows: group.rows,
       _tooltipData: extractTooltipData(group.rows, encMap),
       _colorValue: extractColorValue(group.rows, encMap),
-      _drillDimension: dimensionName
+      _drillDimension: dimensionName,
+      _sortOrder: sortOrder
     };
   }
 
@@ -159,15 +160,16 @@ export function findParent(root, childId) {
  * @param {number} maxChildren
  * @returns {object} newNode with children restored to match oldNode's expansion
  */
-export function reapplyExpansion(oldNode, newNode, encMap, maxChildren) {
+export function reapplyExpansion(oldNode, newNode, encMap, maxChildren, excludeNulls = false) {
   if (!oldNode.children) return newNode;
 
-  // The dimension used to split this node's children is stored on the children themselves
+  // The dimension and sort order used to split this node's children are stored on the children
   const drillDim = oldNode.children[0]?._drillDimension;
   if (!drillDim) return newNode;
+  const sortOrder = oldNode.children[0]?._sortOrder || 'desc';
 
-  // Re-drill the fresh node with the same dimension
-  const reDrilled = drillDown(newNode, drillDim, encMap, maxChildren);
+  // Re-drill the fresh node with the same dimension and sort order
+  const reDrilled = drillDown(newNode, drillDim, encMap, maxChildren, excludeNulls, sortOrder);
   if (!reDrilled.children) return newNode;
 
   // Match new children to old by label and restore collapse + sub-expansion
@@ -179,7 +181,7 @@ export function reapplyExpansion(oldNode, newNode, encMap, maxChildren) {
 
     // Recurse into uncollapsed children that had further drilling
     if (oldChild.children && !oldChild._collapsed) {
-      result = reapplyExpansion(oldChild, result, encMap, maxChildren);
+      result = reapplyExpansion(oldChild, result, encMap, maxChildren, excludeNulls);
     }
 
     return result;

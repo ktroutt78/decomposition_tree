@@ -42,7 +42,7 @@
       // Preserve expansion: replay drill operations on the fresh data
       const existingRoot = get(treeRoot);
       if (existingRoot && freshRoot) {
-        treeRoot.set(reapplyExpansion(existingRoot, freshRoot, encMap, get(config).maxChildrenShown));
+        treeRoot.set(reapplyExpansion(existingRoot, freshRoot, encMap, get(config).maxChildrenShown, get(config).excludeNulls));
       } else {
         treeRoot.set(freshRoot);
       }
@@ -72,7 +72,7 @@
         const encMap = get(encodingMap);
         if (root && root._rows) {
           const freshRoot = buildRootNode(root._rows, encMap);
-          treeRoot.set(reapplyExpansion(root, freshRoot, encMap, cfg.maxChildrenShown));
+          treeRoot.set(reapplyExpansion(root, freshRoot, encMap, cfg.maxChildrenShown, cfg.excludeNulls));
         }
       }
       _prevMax = cfg.maxChildrenShown;
