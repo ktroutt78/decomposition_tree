@@ -481,10 +481,13 @@
     nodeUpdate.select('.expand-circle').on('click', (event, d) => handleExpandClick(event, d));
     nodeUpdate.select('.expand-icon').on('click', (event, d) => handleExpandClick(event, d));
 
-    // ── Drill hint anchor — tracks root expand button in tree coordinates ─
+    // ── Drill hint anchor — centered on expand button X, below node card Y ─
+    // ty points to the bottom of the node (text included) so the bubble never
+    // overlaps the label or subheading. A small fixed screen-pixel gap is added
+    // in the template on top of this.
     hintAnchor = {
       tx: posX(hier) + (isLR ? nw / 2 + EXPAND_R + 2 : 0),
-      ty: posY(hier) + (isLR ? barCY : TB_EXPAND_CY),
+      ty: posY(hier) + (isLR ? nh / 2 : TB_EXPAND_CY + EXPAND_R + 4),
     };
 
     // ── Collect column header data for HTML overlay ────────────────────────
@@ -818,7 +821,7 @@
   {#if showDrillHint && hintAnchor}
     {@const sx = hintAnchor.tx * currentZoom.k + currentZoom.x}
     {@const sy = hintAnchor.ty * currentZoom.k + currentZoom.y}
-    <div class="drill-hint" style="left:{sx}px; top:{sy + 22}px">
+    <div class="drill-hint" style="left:{sx}px; top:{sy + 14}px">
       <svg class="hint-arrow" width="16" height="14" viewBox="0 0 16 14" fill="none">
         <path d="M8 14 C4 14 1 10 1 6 C1 2 4 0 8 0" stroke="white" stroke-width="1.8" stroke-linecap="round" fill="none" opacity="0.7"/>
         <path d="M6 0 L8 0 L8 4" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" fill="none" opacity="0.7"/>
