@@ -1,0 +1,221 @@
+/**
+ * Pure data logic for the decomposition tree — no Tableau API, D3, or Svelte.
+ */
+
+// Returns the value from a row for a given field, trying name then fieldName
+function getFieldValue(row, field) {
+  let dv = row[field.name];
+  if (dv === undefined && field.fieldName && field.fieldName !== field.name) {
+    dv = row[field.fieldName];
+  }
+  return dv;
+}
+
+export function buildRootNode(rows, encMap) {
+  const valueField = encMap.value?.[0];
+  if (!valueField) return null;
+
+  const valueName = valueField.name;
+  let total = 0;
+  let count = 0;
+
+  for (const row of rows) {
+    const dv = getFieldValue(row, valueField);
+    if (dv !== undefined && dv !== null) {
+      const v = typeof dv === 'object' ? dv.value : dv;
+      if (v !== null && !isNaN(Number(v))) {
+        total += Number(v);
+        count++;
+      }
+    }
+  }
+
+  return {
+    id: 'root',
+    label: valueName,
+    value: total,
+    count,
+    percentOfParent: 100,
+    depth: 0,
+    dimensionPath: [],
+    children: null,
+    _collapsed: false,
+    _rows: rows,
+    _tooltipData: extractTooltipData(rows, encMap),
+    _colorValue: extractColorValue(rows, encMap),
+    _drillDimension: null
+  };
+}
+
+export function drillDown(node, dimensionName, encMap, maxChildren = 20, excludeNulls = false) {
+  const valueField = encMap.value?.[0];
+  if (!valueField) return node;
+
+  // Find the breakdown field object so we can do name/fieldName fallback
+  const dimField = (encMap.breakdown || []).find(f => f.name === dimensionName)
+    || { name: dimensionName, fieldName: dimensionName };
+
+  const groups = new Map();
+
+  for (const row of node._rows) {
+    const dimDv = getFieldValue(row, dimField);
+    if (dimDv === undefined || dimDv === null) continue;
+
+    const rawVal = typeof dimDv === 'object' ? dimDv.value : dimDv;
+    if (excludeNulls && (rawVal === null || rawVal === undefined || rawVal === '')) continue;
+
+    const fmtVal = typeof dimDv === 'object' ? (dimDv.formattedValue ?? rawVal) : rawVal;
+    const key = String(fmtVal ?? '(null)');
+    if (excludeNulls && (key === 'null' || key === '(null)' || key === '')) continue;
+
+    if (!groups.has(key)) {
+      groups.set(key, { label: key, rows: [], value: 0, count: 0 });
+    }
+
+    const group = groups.get(key);
+    group.rows.push(row);
+
+    const valDv = getFieldValue(row, valueField);
+    if (valDv !== undefined && valDv !== null) {
+      const v = typeof valDv === 'object' ? valDv.value : valDv;
+      if (v !== null && !isNaN(Number(v))) {
+        group.value += Number(v);
+        group.count++;
+      }
+    }
+  }
+
+  const sorted = Array.from(groups.values())
+    .sort((a, b) => Math.abs(b.value) - Math.abs(a.value));
+
+  const shown  = sorted.slice(0, maxChildren);
+  const hidden = sorted.slice(maxChildren);
+
+  function makeChild(group) {
+    return {
+      id: `${node.id}|${dimensionName}|${group.label}`,
+      label: group.label,
+      value: group.value,
+      count: group.count,
+      percentOfParent: node.value !== 0 ? (group.value / node.value) * 100 : 0,
+      depth: node.depth + 1,
+      dimensionPath: [...node.dimensionPath, { field: dimensionName, value: group.label }],
+      children: null,
+      _collapsed: false,
+      _rows: group.rows,
+      _tooltipData: extractTooltipData(group.rows, encMap),
+      _colorValue: extractColorValue(group.rows, encMap),
+      _drillDimension: dimensionName
+    };
+  }
+
+  const children = shown.map(makeChild);
+
+  // If any groups were cut off, aggregate them into a final "(Other)" child
+  if (hidden.length > 0) {
+    const otherRows  = hidden.flatMap(g => g.rows);
+    const otherValue = hidden.reduce((s, g) => s + g.value, 0);
+    const otherCount = hidden.reduce((s, g) => s + g.count, 0);
+    children.push(makeChild({ label: '(Other)', rows: otherRows, value: otherValue, count: otherCount }));
+  }
+
+  return { ...node, children, _collapsed: false };
+}
+
+export function toggleCollapse(node) {
+  return { ...node, _collapsed: !node._collapsed };
+}
+
+export function updateNodeInTree(root, targetId, transformFn) {
+  if (root.id === targetId) return transformFn(root);
+  if (!root.children) return root;
+  return {
+    ...root,
+    children: root.children.map(c => updateNodeInTree(c, targetId, transformFn))
+  };
+}
+
+/**
+ * Walk the tree to find the direct parent of the node with childId.
+ * Returns the parent data node, or null if not found.
+ */
+export function findParent(root, childId) {
+  if (!root.children) return null;
+  for (const child of root.children) {
+    if (child.id === childId) return root;
+    const found = findParent(child, childId);
+    if (found) return found;
+  }
+  return null;
+}
+
+/**
+ * After a filter/data refresh, replay the old tree's drill-down operations
+ * against the new root's fresh row data, restoring expansion and collapse state.
+ *
+ * @param {object} oldNode  - The previously expanded tree node
+ * @param {object} newNode  - A freshly built node with new _rows (same position in tree)
+ * @param {object} encMap   - Current encoding map
+ * @param {number} maxChildren
+ * @returns {object} newNode with children restored to match oldNode's expansion
+ */
+export function reapplyExpansion(oldNode, newNode, encMap, maxChildren) {
+  if (!oldNode.children) return newNode;
+
+  // The dimension used to split this node's children is stored on the children themselves
+  const drillDim = oldNode.children[0]?._drillDimension;
+  if (!drillDim) return newNode;
+
+  // Re-drill the fresh node with the same dimension
+  const reDrilled = drillDown(newNode, drillDim, encMap, maxChildren);
+  if (!reDrilled.children) return newNode;
+
+  // Match new children to old by label and restore collapse + sub-expansion
+  const newChildren = reDrilled.children.map(newChild => {
+    const oldChild = oldNode.children.find(oc => oc.label === newChild.label);
+    if (!oldChild) return newChild;
+
+    let result = { ...newChild, _collapsed: oldChild._collapsed };
+
+    // Recurse into uncollapsed children that had further drilling
+    if (oldChild.children && !oldChild._collapsed) {
+      result = reapplyExpansion(oldChild, result, encMap, maxChildren);
+    }
+
+    return result;
+  });
+
+  return { ...reDrilled, children: newChildren };
+}
+
+function extractTooltipData(rows, encMap) {
+  const fields = encMap.tooltip || [];
+  if (!fields.length || !rows.length) return {};
+  const result = {};
+  for (const field of fields) {
+    const values = rows
+      .map(r => r[field.name])
+      .filter(dv => dv !== undefined && dv !== null);
+    if (!values.length) continue;
+    const first = typeof values[0] === 'object' ? values[0].value : values[0];
+    const isNumeric = typeof first === 'number';
+    if (isNumeric) {
+      result[field.name] = values.reduce((sum, dv) => {
+        const v = typeof dv === 'object' ? dv.value : dv;
+        return sum + (isNaN(Number(v)) ? 0 : Number(v));
+      }, 0);
+    } else {
+      const dv = values[0];
+      result[field.name] = typeof dv === 'object' ? (dv.formattedValue ?? dv.value) : dv;
+    }
+  }
+  return result;
+}
+
+function extractColorValue(rows, encMap) {
+  const fields = encMap.color || [];
+  if (!fields.length || !rows.length) return null;
+  const dv = rows[0]?.[fields[0].name];
+  if (!dv) return null;
+  return typeof dv === 'object' ? (dv.formattedValue ?? dv.value) : dv;
+}

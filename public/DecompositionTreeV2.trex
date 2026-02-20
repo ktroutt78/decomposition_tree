@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest manifest-version="0.1" xmlns="http://www.tableau.com/xml/extension_manifest">
+  <worksheet-extension id="com.example.extensions.decomp-tree-v2" extension-version="2.0.0">
+    <default-locale>en_US</default-locale>
+    <name resource-id="name"/>
+    <description>Interactive hierarchical decomposition tree for drill-down data exploration. Drop a measure onto Value, then dimensions onto Breakdown to explore root causes.</description>
+    <author name="Developer" email="dev@example.com" organization="Example" website="https://example.com"/>
+    <min-api-version>1.11</min-api-version>
+    <source-location>
+      <url>https://ktroutt78.github.io/decomposition_tree/index.html</url>
+    </source-location>
+    <icon>iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAAABHNCSVQICAgIfAhkiAAAAAlwSFlzAAALEwAACxMBAJqcGAAAABl0RVh0U29mdHdhcmUAd3d3Lmlua3NjYXBlLm9yZ5vuPBoAAADASURBVHic7dixCoJAGIbRj6KgoqCpJQiKmoqgqKCgqaWiooKiOoqiWoqiWoqioYKiDhIREREREREREREREREREREREREREREREREREREREREREZGYAfBxPMcx5ximFMMUQ4xhijHEEKMYYgwxRDHEEKMYYgwxRDHEEKMYYgwxRDHEEKMYYgwxRDHEEKMYYgwxRDHEEKMYYgwxRDHEEKMYYgwxRDHEEKMYYgwxRDGOIcQ4hhjHEOMYYhxDjGMIMY4hxDiGGMcQ4xhiHEOMY4hxjDHGMR84AR8VEhs3AAAAAElFTkSuQmCC</icon>
+
+    <permissions>
+      <permission>full data</permission>
+    </permissions>
+
+    <encoding id="value">
+      <display-name>Measure</display-name>
+      <role-spec>
+        <role-type>continuous-measure</role-type>
+      </role-spec>
+      <fields max-count="1"/>
+    </encoding>
+
+    <encoding id="breakdown">
+      <display-name>Dimension</display-name>
+      <role-spec>
+        <role-type>discrete-dimension</role-type>
+        <role-type>continuous-dimension</role-type>
+      </role-spec>
+      <fields max-count="20"/>
+    </encoding>
+
+  </worksheet-extension>
+  <resources>
+    <resource id="name">
+      <text locale="en_US">Decomposition Tree V2</text>
+    </resource>
+  </resources>
+</manifest>

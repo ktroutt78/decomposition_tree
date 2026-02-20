@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Decomp Tree V2 — Debug</title>
+  <style>
+    body { font-family: monospace; padding: 20px; background: #0d1117; color: #e6edf3; }
+    h2   { color: #58a6ff; margin-bottom: 16px; }
+    .ok  { color: #3fb950; }
+    .err { color: #f85149; }
+    .log { margin: 4px 0; }
+    pre  { background: #161b22; padding: 12px; border-radius: 6px; white-space: pre-wrap; }
+  </style>
+</head>
+<body>
+  <h2>Decomposition Tree V2 — Connection Debug</h2>
+  <pre id="out">Checking...</pre>
+
+  <script>
+    const out = document.getElementById('out');
+    const log = (msg, ok) => {
+      const cls = ok === true ? 'ok' : ok === false ? 'err' : '';
+      out.innerHTML += `<span class="log ${cls}">${msg}</span>\n`;
+    };
+
+    out.textContent = '';
+    log('Page loaded ✓', true);
+    log('Origin: ' + location.origin);
+    log('tableau global: ' + (typeof tableau !== 'undefined' ? 'FOUND ✓' : 'NOT FOUND (outside Tableau)'),
+        typeof tableau !== 'undefined');
+
+    if (typeof tableau !== 'undefined') {
+      log('Calling initializeAsync()...');
+      tableau.extensions.initializeAsync()
+        .then(() => {
+          log('initializeAsync() succeeded ✓', true);
+          try {
+            const ws = tableau.extensions.worksheetContent.worksheet;
+            log('Worksheet name: ' + ws.name, true);
+            log('API version: ' + (tableau.extensions.environment?.apiVersion ?? 'unknown'));
+          } catch(e) {
+            log('Could not access worksheet: ' + e.message, false);
+          }
+        })
+        .catch(e => {
+          log('initializeAsync() FAILED: ' + e.message, false);
+        });
+    } else {
+      log('Running outside Tableau — no initializeAsync() call needed here.');
+      log('If you see this page, the certificate is trusted and the server is working ✓', true);
+    }
+  </script>
+</body>
+</html>
