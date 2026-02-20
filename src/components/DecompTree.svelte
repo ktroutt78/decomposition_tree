@@ -576,24 +576,51 @@
   // Called when the bar area (node group background) is clicked.
   // Selects marks on this worksheet; Tableau's native "Use as Filter" action
   // propagates the selection to other sheets on the dashboard automatically.
+  // Also auto-drills the node when a sibling is already expanded at this level
+  // (preserves the original one-click expand-to-same-dimension behavior).
   async function handleBarClick(event, d) {
     event.stopPropagation();
     tooltipVisible = false;
+    const node = d.data;
     const info = get(selectedNodeInfo);
-    const isSameNode = info?.id === d.data.id;
+    const isSameNode = info?.id === node.id;
+
     if (isSameNode) {
       selectedNodeInfo.set(null);
       statusMessage.set('Selection cleared');
       await clearMarkSelection();
     } else {
-      selectedNodeInfo.set({ id: d.data.id, dimensionPath: d.data.dimensionPath });
-      const label = d.data.dimensionPath.map(p => p.value).join(' › ');
+      selectedNodeInfo.set({ id: node.id, dimensionPath: node.dimensionPath });
+      const label = node.dimensionPath.map(p => p.value).join(' › ');
       try {
-        await selectMarksForFilter(d.data.dimensionPath);
+        await selectMarksForFilter(node.dimensionPath);
         statusMessage.set(`Filtering: ${label}`);
       } catch (e) {
         console.error('[DecompTree] handleBarClick filter error:', e);
         statusMessage.set(`Filter error — check browser console (F12)`);
+      }
+    }
+
+    // Auto-drill: if this node is undrilled but a sibling is already drilled,
+    // expand it to the same dimension so the user doesn't have to click +.
+    if (!node.children && !node._collapsed) {
+      const siblings = d.parent?.data?.children || [];
+      const drilledSibling = siblings.find(s => s.id !== node.id && s.children?.length > 0);
+      const siblingDim = drilledSibling?.children?.[0]?._drillDimension ?? null;
+      if (siblingDim) {
+        const siblingSort = drilledSibling?.children?.[0]?._sortOrder || 'desc';
+        const cfg = get(config);
+        const updated = drillDown(node, siblingDim, get(encodingMap), cfg.maxChildrenShown, cfg.excludeNulls, siblingSort);
+        treeRoot.update(root => {
+          let r = updateNodeInTree(root, node.id, () => updated);
+          for (const sib of siblings) {
+            if (sib.id !== node.id && sib.children && !sib._collapsed) {
+              r = updateNodeInTree(r, sib.id, n => ({ ...n, _collapsed: true }));
+            }
+          }
+          return r;
+        });
+        statusMessage.set(`Drilled into: ${siblingDim}`);
       }
     }
   }
