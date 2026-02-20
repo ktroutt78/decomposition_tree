@@ -2,7 +2,8 @@
   import { onMount } from 'svelte';
   import { get } from 'svelte/store';
   import * as d3 from 'd3';
-  import { treeRoot, pendingDrillNode, statusMessage } from '../stores/treeState.js';
+  import { treeRoot, pendingDrillNode, statusMessage, selectedNodeInfo } from '../stores/treeState.js';
+  import { selectMarksForFilter, clearMarkSelection } from '../lib/tableau.js';
   import { config } from '../stores/config.js';
   import { encodingMap } from '../stores/encodings.js';
   import { drillDown, toggleCollapse, updateNodeInTree, findParent, toggleSortAtDimension } from '../lib/treeEngine.js';
@@ -93,6 +94,16 @@
       });
     svgSel.call(zoomBehavior).on('dblclick.zoom', null);
 
+    // Clicking the SVG background deselects the current node and clears mark selection
+    svgSel.on('click', async () => {
+      const info = get(selectedNodeInfo);
+      if (info) {
+        selectedNodeInfo.set(null);
+        statusMessage.set('Selection cleared');
+        await clearMarkSelection();
+      }
+    });
+
     // Store subscription fires immediately with current value, then on every change.
     // This avoids the Svelte 5 legacy-mode race where $: blocks fire before onMount.
     const redraw = () => {
@@ -105,10 +116,15 @@
       doFitToView(root, cfg);
     };
 
-    const unsubRoot   = treeRoot.subscribe(redraw);
-    const unsubConfig = config.subscribe(redraw);
+    const unsubRoot     = treeRoot.subscribe(redraw);
+    const unsubConfig   = config.subscribe(redraw);
+    const unsubSelected = selectedNodeInfo.subscribe(() => {
+      if (!svgEl) return;
+      d3.select(svgEl).selectAll('.selection-ring')
+        .attr('stroke', d => get(selectedNodeInfo)?.id === d.data.id ? '#3b82f6' : 'transparent');
+    });
 
-    return () => { unsubRoot(); unsubConfig(); };
+    return () => { unsubRoot(); unsubConfig(); unsubSelected(); };
   });
 
   // Split `text` into lines that fit within `maxWidth` pixels (approximate char-width method).
@@ -261,7 +277,6 @@
     const nodeEnter = nodeSel.enter().append('g')
       .attr('class', 'tree-node')
       .attr('transform', xform)
-      .on('click', handleNodeClick)
       .on('mousemove', handleMouseMove)
       .on('mouseleave', () => { tooltipVisible = false; });
 
@@ -295,6 +310,13 @@
     // Expand icon text (+/−)
     nodeEnter.append('text').attr('class', 'expand-icon')
       .attr('text-anchor', 'middle');
+
+    // Selection ring — invisible by default; shown when node is the dashboard filter target
+    nodeEnter.append('rect').attr('class', 'selection-ring')
+      .attr('fill', 'none')
+      .attr('stroke', 'transparent')
+      .attr('stroke-width', 2)
+      .attr('pointer-events', 'none');
 
     // ── UPDATE (enter + existing) ──────────────────────────────────────────
     const nodeUpdate = nodeEnter.merge(nodeSel);
@@ -404,6 +426,20 @@
       .attr('y', isLR ? barCY + 5 : TB_EXPAND_CY + 5)
       .attr('visibility', d => showExpand(d) ? 'visible' : 'hidden')
       .text(d => isExpanded(d) ? '−' : '+');
+
+    // Selection ring: position and highlight selected node
+    nodeUpdate.select('.selection-ring')
+      .attr('x',      isLR ? -nw / 2 - 2      : -TB_BAR_W / 2 - 2)
+      .attr('y',      isLR ? -nh / 2 - 2       : TB_BAR_TOP - 2)
+      .attr('width',  isLR ? nw + 4            : TB_BAR_W + 4)
+      .attr('height', isLR ? nh + 4            : TB_BAR_MAX_H + 4)
+      .attr('rx', (cfg.cornerRadius ?? 4) + 2)
+      .attr('stroke', d => get(selectedNodeInfo)?.id === d.data.id ? '#3b82f6' : 'transparent');
+
+    // Bar area click → select/filter; expand button click → drill/collapse
+    nodeUpdate.on('click', (event, d) => handleBarClick(event, d));
+    nodeUpdate.select('.expand-circle').on('click', (event, d) => handleExpandClick(event, d));
+    nodeUpdate.select('.expand-icon').on('click', (event, d) => handleExpandClick(event, d));
 
     // ── Collect column header data for HTML overlay ────────────────────────
     // LR: one header per unique column (posX = horizontal); rendered at top.
@@ -531,8 +567,38 @@
       .call(zoomBehavior.transform, d3.zoomIdentity.translate(tx, ty).scale(scale));
   }
 
-  function handleNodeClick(event, d) {
+  // Called when the expand/collapse button is clicked
+  function handleExpandClick(event, d) {
     event.stopPropagation();
+    doDrillAction(d);
+  }
+
+  // Called when the bar area (node group background) is clicked.
+  // Selects marks on this worksheet; Tableau's native "Use as Filter" action
+  // propagates the selection to other sheets on the dashboard automatically.
+  async function handleBarClick(event, d) {
+    event.stopPropagation();
+    tooltipVisible = false;
+    const info = get(selectedNodeInfo);
+    const isSameNode = info?.id === d.data.id;
+    if (isSameNode) {
+      selectedNodeInfo.set(null);
+      statusMessage.set('Selection cleared');
+      await clearMarkSelection();
+    } else {
+      selectedNodeInfo.set({ id: d.data.id, dimensionPath: d.data.dimensionPath });
+      const label = d.data.dimensionPath.map(p => p.value).join(' › ');
+      try {
+        await selectMarksForFilter(d.data.dimensionPath);
+        statusMessage.set(`Filtering: ${label}`);
+      } catch (e) {
+        console.error('[DecompTree] handleBarClick filter error:', e);
+        statusMessage.set(`Filter error — check browser console (F12)`);
+      }
+    }
+  }
+
+  function doDrillAction(d) {
     tooltipVisible = false;
     const node = d.data;
 

@@ -161,6 +161,45 @@ function namedRows(dataTableOrPage) {
   });
 }
 
+/**
+ * Programmatically select marks on the host worksheet by dimension path.
+ * Tableau's native "Use as Filter" dashboard action propagates the selection
+ * to other sheets automatically — no cross-sheet API calls needed.
+ * Re-throws on failure so the caller can surface the error in the UI.
+ * @param {Array<{field: string, value: string}>} dimensionPath
+ */
+export async function selectMarksForFilter(dimensionPath) {
+  if (!dimensionPath?.length) return;
+  if (typeof tableau === 'undefined') return; // dev/mock mode — no-op
+  const ws = tableau.extensions.worksheetContent?.worksheet;
+  if (!ws) {
+    console.warn('[DecompTree] selectMarksForFilter: worksheet not available');
+    return;
+  }
+  const criteria = dimensionPath.map(({ field, value }) => ({
+    fieldName: field,
+    value: value
+  }));
+  console.log('[DecompTree] selectMarksByValueAsync criteria:', JSON.stringify(criteria));
+  await ws.selectMarksByValueAsync(criteria, tableau.SelectionUpdateType.Replace);
+  console.log('[DecompTree] Mark selection applied');
+}
+
+/**
+ * Clear the mark selection on the host worksheet.
+ */
+export async function clearMarkSelection() {
+  if (typeof tableau === 'undefined') return; // dev/mock mode — no-op
+  try {
+    const ws = tableau.extensions.worksheetContent?.worksheet;
+    if (!ws) return;
+    await ws.clearSelectedMarksAsync();
+    console.log('[DecompTree] Mark selection cleared');
+  } catch (e) {
+    console.warn('[DecompTree] clearSelectedMarksAsync error:', e);
+  }
+}
+
 // --- Mock data for development outside Tableau ---
 
 function getMockEncodingMap() {
