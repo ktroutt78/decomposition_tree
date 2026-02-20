@@ -6,7 +6,7 @@ export const defaultConfig = {
   nodeHeight: 86,
   levelSpacing: 280,
   siblingSpacing: 20,
-  maxChildrenShown: 10,
+  maxChildrenShown: 5,
   cornerRadius: 10,
   colorTheme: 'blue',
   customColorStart: '#4A90E2',
