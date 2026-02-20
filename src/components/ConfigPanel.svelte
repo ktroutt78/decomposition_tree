@@ -167,9 +167,9 @@
 
       {#if draft.orientation === 'LR'}
         <div class="field-group">
-          <span class="field-label">Initial alignment</span>
-          <div class="seg-control" role="group" aria-label="Initial alignment">
-            {#each [['center','Centered'],['top-left','Top']] as [val, label]}
+          <span class="field-label">Alignment</span>
+          <div class="seg-control" role="group" aria-label="Alignment">
+            {#each [['top-left','Top'],['center','Centered']] as [val, label]}
               <button
                 class="seg-btn seg-btn-sm"
                 class:active={draft.initialAlignment === val}
