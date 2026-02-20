@@ -50,6 +50,9 @@
   // HTML column headers (driven from D3 layout, updated each render)
   let colHeaders = []; // [{ dimName, dataX }]
 
+  // Expand-button position in tree coordinates — used to anchor the drill hint overlay
+  let hintAnchor = null; // { tx, ty }
+
   // Current D3 zoom transform — tracked to position column headers correctly
   let currentZoom = { x: 0, y: 0, k: 1 };
 
@@ -478,6 +481,12 @@
     nodeUpdate.select('.expand-circle').on('click', (event, d) => handleExpandClick(event, d));
     nodeUpdate.select('.expand-icon').on('click', (event, d) => handleExpandClick(event, d));
 
+    // ── Drill hint anchor — tracks root expand button in tree coordinates ─
+    hintAnchor = {
+      tx: posX(hier) + (isLR ? nw / 2 + EXPAND_R + 2 : 0),
+      ty: posY(hier) + (isLR ? barCY : TB_EXPAND_CY),
+    };
+
     // ── Collect column header data for HTML overlay ────────────────────────
     // LR: one header per unique column (posX = horizontal); rendered at top.
     // TB: one header per unique depth row (posY = vertical); rendered at left.
@@ -757,6 +766,10 @@
     );
   }
 
+  // Show the onboarding hint when the root has never been drilled (no children).
+  // Automatically disappears when the root is expanded and reappears on collapse/reload.
+  $: showDrillHint = !!$treeRoot && !$treeRoot.children?.length;
+
   function handleDrillSelect(dimName, sortOrder = 'desc') {
     if (!$pendingDrillNode) return;
     const pendingNode = $pendingDrillNode;
@@ -800,6 +813,19 @@
       </div>
     </div>
   {/each}
+
+  <!-- Drill hint — shown when root node has never been expanded -->
+  {#if showDrillHint && hintAnchor}
+    {@const sx = hintAnchor.tx * currentZoom.k + currentZoom.x}
+    {@const sy = hintAnchor.ty * currentZoom.k + currentZoom.y}
+    <div class="drill-hint" style="left:{sx}px; top:{sy + 22}px">
+      <svg class="hint-arrow" width="16" height="14" viewBox="0 0 16 14" fill="none">
+        <path d="M8 14 C4 14 1 10 1 6 C1 2 4 0 8 0" stroke="white" stroke-width="1.8" stroke-linecap="round" fill="none" opacity="0.7"/>
+        <path d="M6 0 L8 0 L8 4" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" fill="none" opacity="0.7"/>
+      </svg>
+      <span>Click <strong>+</strong> to drill into an attribute</span>
+    </div>
+  {/if}
 
   <!-- Zoom controls -->
   <div class="zoom-controls">
@@ -928,5 +954,46 @@
     font-weight: 700;
   }
 
+  /* Drill hint callout */
+  .drill-hint {
+    position: absolute;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: #1e293b;
+    color: white;
+    border-radius: 10px;
+    padding: 11px 18px;
+    font-size: 14px;
+    font-weight: 500;
+    white-space: nowrap;
+    pointer-events: none;
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.28);
+    transform: translateX(-50%);
+    z-index: 8;
+    animation: hint-pop 0.35s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  /* Upward-pointing triangle connecting hint to the + button */
+  .drill-hint::before {
+    content: '';
+    position: absolute;
+    top: -9px;
+    left: 50%;
+    transform: translateX(-50%);
+    border-width: 0 9px 9px 9px;
+    border-style: solid;
+    border-color: transparent transparent #1e293b transparent;
+  }
+
+  .hint-arrow {
+    flex-shrink: 0;
+    opacity: 0.85;
+  }
+
+  @keyframes hint-pop {
+    from { opacity: 0; transform: translateX(-50%) translateY(6px); }
+    to   { opacity: 1; transform: translateX(-50%) translateY(0);   }
+  }
 
 </style>
