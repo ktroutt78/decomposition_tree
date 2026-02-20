@@ -70,10 +70,16 @@ Open the settings panel with the ⚙ gear icon in the top-right corner. Settings
 ### Color Theme
 | Setting | Description | Default |
 |---|---|---|
-| Theme | Preset color palettes (Blue, Teal, Purple, Orange, Custom) | Blue |
-| Custom start / end | Gradient colors when Theme is set to Custom | — |
+| Theme | Preset color palettes (Ocean, Forest, Amethyst, Sunset, Teal, Custom) | Ocean |
+| Custom start / end | Start and end colors when Theme is set to Custom | — |
+| Apply gradient to bars | When on, bar colors are distributed across the theme gradient based on value rank. When off, all positive bars share a single solid color | On |
 | Negative value color | Fill color for bars with a negative value | Pink |
 | Background color | Visualization area background | White |
+
+**Gradient color behavior:**
+- **Preset themes** — the largest value bar gets the darkest shade; bars graduate to the lightest shade as values decrease
+- **Custom gradient** — the largest value bar gets the first color chosen; the smallest gets the second color chosen
+- When the gradient toggle is off, all positive bars render in the primary theme color regardless of value rank
 
 ### Display
 | Setting | Description | Default |
