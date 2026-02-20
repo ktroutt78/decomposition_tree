@@ -602,10 +602,23 @@
       }
     }
 
-    // Auto-drill: if this node is undrilled but a sibling is already drilled,
-    // expand it to the same dimension so the user doesn't have to click +.
-    if (!node.children && !node._collapsed) {
-      const siblings = d.parent?.data?.children || [];
+    const siblings = d.parent?.data?.children || [];
+
+    if (node._collapsed) {
+      // Previously drilled but collapsed by one-at-a-time logic — re-expand it
+      // and collapse whichever sibling is currently expanded.
+      treeRoot.update(root => {
+        let r = updateNodeInTree(root, node.id, n => ({ ...n, _collapsed: false }));
+        for (const sib of siblings) {
+          if (sib.id !== node.id && sib.children && !sib._collapsed) {
+            r = updateNodeInTree(r, sib.id, n => ({ ...n, _collapsed: true }));
+          }
+        }
+        return r;
+      });
+    } else if (!node.children) {
+      // Un-drilled node: if a sibling is already drilled, auto-drill this node
+      // using the same dimension so the user doesn't have to click +.
       const drilledSibling = siblings.find(s => s.id !== node.id && s.children?.length > 0);
       const siblingDim = drilledSibling?.children?.[0]?._drillDimension ?? null;
       if (siblingDim) {
