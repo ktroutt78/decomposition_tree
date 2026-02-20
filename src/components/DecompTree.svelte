@@ -127,12 +127,17 @@
     const endColor   = cfg.colorTheme === 'custom' ? (cfg.customColorEnd   || startColor) : theme.end;
     const colorInterp = d3.interpolateRgb(startColor, endColor);
 
-    // Returns a gradient color for a node based on its position among siblings
+    // Returns a gradient color for a node based on its position among siblings.
+    // Default themes: largest (idx=0) gets the dark end, smallest gets the light end.
+    // Custom gradient: largest gets the first color chosen, smallest gets the last.
+    const isCustom = cfg.colorTheme === 'custom';
     function posColor(d) {
-      if (!d.parent || !d.parent.children || d.parent.children.length <= 1) return colorInterp(0);
+      if (!d.parent || !d.parent.children || d.parent.children.length <= 1) {
+        return colorInterp(isCustom ? 0 : 1);
+      }
       const siblings = d.parent.children;
-      const idx = siblings.indexOf(d);
-      return colorInterp(idx / (siblings.length - 1));
+      const t = siblings.indexOf(d) / (siblings.length - 1);
+      return colorInterp(isCustom ? t : 1 - t);
     }
 
     const fontSize      = cfg.fontSize    || 13;
