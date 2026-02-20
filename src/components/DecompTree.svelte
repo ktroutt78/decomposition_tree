@@ -70,13 +70,13 @@
     node.children.forEach(c => topAlignHier(c, isLR));
   }
 
-  // Color palette (positive bars)
+  // Color palette — start and end for per-sibling gradient interpolation
   const COLOR_THEMES = {
-    blue:   '#5b8dee',
-    green:  '#34c98e',
-    purple: '#9b6dff',
-    orange: '#ff8c4b',
-    teal:   '#2eccc4'
+    blue:   { start: '#5b8dee', end: '#1e3fa8' },
+    green:  { start: '#34c98e', end: '#0b7a4e' },
+    purple: { start: '#9b6dff', end: '#4a1aa8' },
+    orange: { start: '#ff8c4b', end: '#c44e00' },
+    teal:   { start: '#2eccc4', end: '#0d7a75' },
   };
   const BAR_BG_COLOR = '#e2e8f0'; // gray track
 
@@ -122,9 +122,18 @@
     _lastNodeH = nh;
     const BAR_R    = cfg.barRadius ?? 4;
     const negColor = cfg.negativeColor || '#f472b6';
-    const posColor = cfg.colorTheme === 'custom'
-      ? (cfg.customColorStart || '#5b8dee')
-      : (COLOR_THEMES[cfg.colorTheme] || COLOR_THEMES.blue);
+    const theme     = COLOR_THEMES[cfg.colorTheme] || COLOR_THEMES.blue;
+    const startColor = cfg.colorTheme === 'custom' ? (cfg.customColorStart || '#5b8dee') : theme.start;
+    const endColor   = cfg.colorTheme === 'custom' ? (cfg.customColorEnd   || startColor) : theme.end;
+    const colorInterp = d3.interpolateRgb(startColor, endColor);
+
+    // Returns a gradient color for a node based on its position among siblings
+    function posColor(d) {
+      if (!d.parent || !d.parent.children || d.parent.children.length <= 1) return colorInterp(0);
+      const siblings = d.parent.children;
+      const idx = siblings.indexOf(d);
+      return colorInterp(idx / (siblings.length - 1));
+    }
 
     const fontSize      = cfg.fontSize    || 13;
     const subFontSize   = cfg.subFontSize || 11;
@@ -239,7 +248,7 @@
         const pct = Math.max(0, Math.min(100, Math.abs(d.data.percentOfParent ?? 100)));
         return nw * pct / 100;
       })
-      .attr('fill', d => d.data.value >= 0 ? posColor : negColor);
+      .attr('fill', d => d.data.value >= 0 ? posColor(d) : negColor);
 
     // Label line 1:
     //   root  → measure name/alias only (% is always 100%, never shown)
@@ -294,7 +303,7 @@
       .attr('cx', nw / 2)
       .attr('visibility', d => showExpand(d) ? 'visible' : 'hidden')
       .transition(tFill)
-      .attr('fill', d => isExpanded(d) ? '#94a3b8' : posColor);
+      .attr('fill', d => isExpanded(d) ? '#94a3b8' : posColor(d));
 
     nodeUpdate.select('.expand-icon')
       .attr('x', nw / 2)
