@@ -33,7 +33,7 @@ export const defaultConfig = {
   labelMode: 'both',
   animationDuration: 300,
   initialAlignment: 'top-left',
-  tooltipNarrative: ''
+  tooltipNarrative: 'Value: <value>\n% of Parent: <pct>\nRecords: <count>'
 };
 
 export const config = writable({ ...defaultConfig });
