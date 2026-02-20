@@ -228,7 +228,7 @@
     nodeEnter.append('text').attr('class', 'bar-value-text')
       .attr('text-anchor', 'start');
 
-    // Expand button circle (at right edge of bar)
+    // Expand button circle — just to the right of the node card, at bar height
     nodeEnter.append('circle').attr('class', 'expand-circle')
       .attr('cy', barCY).attr('r', EXPAND_R)
       .attr('stroke', 'white').attr('stroke-width', 1.5);
@@ -306,13 +306,14 @@
     };
 
     nodeUpdate.select('.expand-circle')
-      .attr('cx', nw / 2)
+      .attr('cx', nw / 2 + EXPAND_R + 2)
+      .attr('cy', barCY)
       .attr('visibility', d => showExpand(d) ? 'visible' : 'hidden')
       .transition(tFill)
       .attr('fill', d => isExpanded(d) ? '#94a3b8' : posColor(d));
 
     nodeUpdate.select('.expand-icon')
-      .attr('x', nw / 2)
+      .attr('x', nw / 2 + EXPAND_R + 2)
       .attr('y', barCY + 5)
       .attr('visibility', d => showExpand(d) ? 'visible' : 'hidden')
       .text(d => isExpanded(d) ? '−' : '+');
@@ -343,24 +344,25 @@
     const style = cfg.linkStyle || 'step';
 
     if (isLR) {
-      // LR: source exits bar right-center; target enters bar left-center
+      // LR: source exits after the expand button (card edge + button diameter + gap)
+      const srcX = nw / 2 + EXPAND_R * 2 + 6;
       if (style === 'curved') {
         return d3.linkHorizontal()
           .x(d => d.barX)
           .y(d => d.barY)
-          .source(d => ({ barX: d.source.y + nw / 2, barY: d.source.x + barCY }))
+          .source(d => ({ barX: d.source.y + srcX, barY: d.source.x + barCY }))
           .target(d => ({ barX: d.target.y - nw / 2, barY: d.target.x + barCY }));
       }
       if (style === 'straight') {
         return d => {
-          const sx = d.source.y + nw / 2, sy = d.source.x + barCY;
+          const sx = d.source.y + srcX, sy = d.source.x + barCY;
           const tx = d.target.y - nw / 2, ty = d.target.x + barCY;
           return `M${sx},${sy}L${tx},${ty}`;
         };
       }
       // step (default)
       return d => {
-        const sx = d.source.y + nw / 2, sy = d.source.x + barCY;
+        const sx = d.source.y + srcX, sy = d.source.x + barCY;
         const tx = d.target.y - nw / 2, ty = d.target.x + barCY;
         const mx = (sx + tx) / 2;
         return `M${sx},${sy}H${mx}V${ty}H${tx}`;
