@@ -161,7 +161,7 @@ export function toggleSortAtDimension(root, dim, encMap, maxChildren, excludeNul
       }
       return result;
     });
-    return { ...reDrilled, children: newChildren };
+    return { ...reDrilled, children: newChildren, _collapsed: root._collapsed };
   }
 
   // Recurse into children to find the matching dimension at a deeper level
