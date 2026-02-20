@@ -24,7 +24,3 @@ export const colorFieldName = derived(encodingMap, ($map) => {
   return ($map.color && $map.color.length > 0) ? $map.color[0].name : null;
 });
 
-// Raw tooltip narrative template from Tableau's marksSpec.
-// null = not available (Tableau API did not expose it).
-// string = the template text, possibly containing <FieldName> placeholders.
-export const tooltipTemplate = writable(null);

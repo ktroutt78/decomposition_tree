@@ -3,15 +3,15 @@
   export let y = 0;
   export let data = null;
 
-  import { tooltipFieldNames, tooltipTemplate } from '../stores/encodings.js';
+  import { tooltipFieldNames } from '../stores/encodings.js';
   import { config } from '../stores/config.js';
   import { formatValue } from '../lib/formatters.js';
 
   $: adjustedX = x + 248 > (window?.innerWidth ?? 9999) ? x - 260 : x;
   $: adjustedY = y + 200 > (window?.innerHeight ?? 9999) ? y - 212 : y;
 
-  // Substitute <FieldName> placeholders in the Tableau tooltip template with
-  // actual values from the hovered node. Returns null if no template is set.
+  // Substitute <FieldName> placeholders in the user-authored narrative template
+  // with actual values from the hovered node. Returns null if no template is set.
   function renderNarrative(template, node) {
     if (!template || !node) return null;
     const vals = {};
@@ -26,7 +26,7 @@
     return template.replace(/<([^>]+)>/g, (match, ref) => vals[ref] ?? match);
   }
 
-  $: narrative = renderNarrative($tooltipTemplate, data);
+  $: narrative = renderNarrative($config.tooltipNarrative, data);
 </script>
 
 {#if data}

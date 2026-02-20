@@ -3,7 +3,7 @@
  * All Tableau API calls are contained here — no other file touches `tableau.*`.
  */
 
-import { encodingMap, tooltipTemplate } from '../stores/encodings.js';
+import { encodingMap } from '../stores/encodings.js';
 import { summaryRows, statusMessage, treeRoot } from '../stores/treeState.js';
 import { loadConfig } from '../stores/config.js';
 
@@ -26,7 +26,6 @@ export async function initTableau(onDataReady) {
     const mockRows = getMockRows();
     encodingMap.set(mockEncMap);
     summaryRows.set(mockRows);
-    tooltipTemplate.set(getMockTooltipTemplate());
     if (onDataReady) onDataReady(mockEncMap, mockRows);
     return;
   }
@@ -63,7 +62,6 @@ export async function initTableau(onDataReady) {
     const mockRows = getMockRows();
     encodingMap.set(mockEncMap);
     summaryRows.set(mockRows);
-    tooltipTemplate.set(getMockTooltipTemplate());
     if (_onDataReady) _onDataReady(mockEncMap, mockRows);
   }
 }
@@ -118,30 +116,6 @@ async function fetchEncodingMap() {
       map[enc.id].push({ name, fieldName: f?.fieldName || name });
     }
     console.log('[DecompTree] Encoding map:', JSON.stringify(map));
-
-    // Discovery: log all marksSpec keys so we can find the tooltip template property.
-    // The exact property name varies by Tableau version — check the console output.
-    console.log('[DecompTree] marksSpec keys:', Object.keys(marksSpec));
-
-    // Try known property names that Tableau might use for the tooltip template string.
-    const rawTemplate =
-      marksSpec.tooltipSpec ??
-      marksSpec.tooltipText ??
-      marksSpec.tooltip_spec ??
-      marksSpec.tooltipTemplate ??
-      null;
-
-    if (rawTemplate !== null) {
-      const tplStr = typeof rawTemplate === 'string' ? rawTemplate : JSON.stringify(rawTemplate);
-      console.log('[DecompTree] Tooltip template found:', tplStr);
-      tooltipTemplate.set(tplStr);
-    } else {
-      console.log('[DecompTree] No tooltip template found in marksSpec. Keys were:', Object.keys(marksSpec));
-      // Surface marksSpec keys in the tooltip narrative so they're visible without DevTools.
-      // Remove this diagnostic once the correct property name is confirmed.
-      tooltipTemplate.set(`[Diagnostic] marksSpec keys: ${Object.keys(marksSpec).join(', ')}`);
-    }
-
     return map;
   } catch (e) {
     console.warn('[DecompTree] getVisualSpecificationAsync failed:', e);
@@ -240,12 +214,6 @@ function getMockEncodingMap() {
     tooltip: [{ name: 'SUM(Profit)', fieldName: 'SUM(Profit)' }],
     color: []
   };
-}
-
-function getMockTooltipTemplate() {
-  // Simulates the narrative text a user would type in Tableau's Tooltip editor.
-  // Field references use <FieldName> — Tableau's native placeholder format.
-  return 'Performance note: <Region> is a key market segment.\nReview <Category> trends quarterly to identify growth opportunities.';
 }
 
 function getMockRows() {

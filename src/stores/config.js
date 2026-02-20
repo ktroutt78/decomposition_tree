@@ -32,7 +32,8 @@ export const defaultConfig = {
   showMeasureName: true,
   labelMode: 'both',
   animationDuration: 300,
-  initialAlignment: 'top-left'
+  initialAlignment: 'top-left',
+  tooltipNarrative: ''
 };
 
 export const config = writable({ ...defaultConfig });

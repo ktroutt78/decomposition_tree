@@ -422,6 +422,24 @@
       </div>
     </section>
 
+    <!-- ── Tooltip ──────────────────────────────────────── -->
+    <section class="config-section">
+      <h3 class="section-title">Tooltip</h3>
+      <div class="field-group">
+        <label class="field-label" for="tooltipNarrative">Narrative template</label>
+        <textarea
+          id="tooltipNarrative"
+          bind:value={draft.tooltipNarrative}
+          class="text-input narrative-input"
+          placeholder="e.g. <Region> drives key results.&#10;Profit: <SUM(Profit)>"
+          rows="4"
+        ></textarea>
+        <p class="field-hint">
+          Shown in the hover tooltip. Use &lt;FieldName&gt; to insert values — e.g. &lt;Region&gt;, &lt;SUM(Sales)&gt;. Supports newlines.
+        </p>
+      </div>
+    </section>
+
     <!-- ── Animation ────────────────────────────────────── -->
     <section class="config-section">
       <h3 class="section-title">Animation</h3>
@@ -769,6 +787,21 @@
 
   .num-input-sm:focus {
     border-color: var(--color-accent);
+  }
+
+  .narrative-input {
+    resize: vertical;
+    min-height: 80px;
+    font-family: var(--font-mono);
+    font-size: var(--text-sm);
+    line-height: 1.5;
+  }
+
+  .field-hint {
+    margin-top: var(--space-1);
+    font-size: var(--text-xs);
+    color: var(--color-text-muted);
+    line-height: 1.4;
   }
 
   .select-input,
