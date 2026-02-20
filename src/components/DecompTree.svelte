@@ -111,6 +111,32 @@
     return () => { unsubRoot(); unsubConfig(); };
   });
 
+  // Split `text` into lines that fit within `maxWidth` pixels (approximate char-width method).
+  // Returns up to maxLines strings; truncates the last line with "…" if needed.
+  function computeWrappedLines(text, maxWidth, fontSize, maxLines = 2) {
+    const charW  = fontSize * 0.58;
+    const maxCh  = Math.max(6, Math.floor(maxWidth / charW));
+    const words  = String(text ?? '').split(/\s+/).filter(Boolean);
+    if (!words.length) return [''];
+    const lines  = [];
+    let cur      = '';
+    for (const word of words) {
+      if (lines.length === maxLines - 1) {
+        // On the last allowed line — keep appending (will truncate below)
+        cur = cur ? `${cur} ${word}` : word;
+      } else if (!cur) {
+        cur = word;
+      } else if ((cur + ' ' + word).length <= maxCh) {
+        cur += ' ' + word;
+      } else {
+        lines.push(cur);
+        cur = word;
+      }
+    }
+    if (cur) lines.push(cur.length > maxCh + 3 ? `${cur.slice(0, maxCh)}…` : cur);
+    return lines.slice(0, maxLines);
+  }
+
   function renderTree(rootData, cfg, valueName) {
     if (!mainGroup || !rootData) return;
 
@@ -130,6 +156,27 @@
     const TB_NH        = TB_BAR_MAX_H + EXPAND_R * 2 + 14; // effective node height for layout
 
     _lastNodeH = isLR ? nh : TB_NH;
+
+    // Compute the final wrapped line array for a TB label node (including pct% suffix).
+    // Shared between bar-label rendering and bar-value-text y-position calculation.
+    function tbLabelContent(d) {
+      const rawLabel   = d.depth === 0 ? valueName : d.data.label;
+      const availWidth = nw - TB_BAR_W / 2 - 8;
+      const lines      = computeWrappedLines(rawLabel, availWidth, fontSize);
+      if (d.depth > 0 && labelMode !== 'value') {
+        const pct    = (d.data.percentOfParent ?? 100).toFixed(0);
+        const pctStr = ` (${pct}%)`;
+        const maxCh  = Math.floor(availWidth / (fontSize * 0.58));
+        const last   = lines[lines.length - 1];
+        if (last.length + pctStr.length <= maxCh) {
+          lines[lines.length - 1] += pctStr; // fits on same line
+        } else {
+          lines.push(`(${pct}%)`);           // overflow to new line
+        }
+      }
+      return lines;
+    }
+
     const BAR_R    = cfg.barRadius ?? 4;
     const negColor = cfg.negativeColor || '#f472b6';
     const theme     = COLOR_THEMES[cfg.colorTheme] || COLOR_THEMES.blue;
@@ -291,12 +338,26 @@
       .style('font-size', `${fontSize}px`)
       .style('font-family', fontFamily)
       .style('fill', headingColor)
-      .text(d => {
-        if (d.depth === 0) return valueName;
-        const label = truncate(d.data.label, 24);
-        if (labelMode === 'value') return label;
-        const pct = (d.data.percentOfParent ?? 100).toFixed(0);
-        return `${label} (${pct}%)`;
+      .each(function(d) {
+        const el = d3.select(this);
+        if (isLR) {
+          // LR: single-line text — D3's .text() clears any existing tspans automatically
+          if (d.depth === 0) { el.text(valueName); return; }
+          const label = truncate(d.data.label, 24);
+          if (labelMode === 'value') { el.text(label); return; }
+          const pct = (d.data.percentOfParent ?? 100).toFixed(0);
+          el.text(`${label} (${pct}%)`);
+        } else {
+          // TB: wrap label into tspan elements so text doesn't overflow into adjacent bar
+          el.text(''); // clears existing text/tspans
+          const lines = tbLabelContent(d);
+          lines.forEach((line, i) => {
+            el.append('tspan')
+              .attr('x', TB_LABEL_X)
+              .attr('dy', i === 0 ? 0 : LINE_H)
+              .text(line);
+          });
+        }
       });
 
     // Value line 2:
@@ -305,7 +366,7 @@
     //   otherwise   → value, optionally prefixed with measure name
     nodeUpdate.select('.bar-value-text')
       .attr('x', isLR ? -nw / 2 + 6 : TB_LABEL_X)
-      .attr('y', isLR ? text2Y : TB_BAR_TOP + 13 + LINE_H)
+      .attr('y', d => isLR ? text2Y : TB_BAR_TOP + 13 + LINE_H * tbLabelContent(d).length)
       .style('font-size', `${subFontSize}px`)
       .style('font-family', fontFamily)
       .style('fill', subheadColor)
