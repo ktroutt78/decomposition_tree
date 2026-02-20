@@ -120,8 +120,16 @@
     const unsubConfig   = config.subscribe(redraw);
     const unsubSelected = selectedNodeInfo.subscribe(() => {
       if (!svgEl) return;
+      const sel = get(selectedNodeInfo);
       d3.select(svgEl).selectAll('.selection-ring')
-        .attr('stroke', d => get(selectedNodeInfo)?.id === d.data.id ? '#3b82f6' : 'transparent');
+        .attr('stroke', d => sel?.id === d.data.id ? '#3b82f6' : 'transparent');
+      d3.select(svgEl).selectAll('.tree-node')
+        .transition().duration(200)
+        .style('opacity', d => {
+          if (!sel) return 1;
+          if (d.data.id === sel.id) return 1;
+          return d.parent?.children?.some(c => c.data.id === sel.id) ? 0.3 : 1;
+        });
     });
 
     return () => { unsubRoot(); unsubConfig(); unsubSelected(); };
@@ -435,6 +443,15 @@
       .attr('height', isLR ? nh + 4            : TB_BAR_MAX_H + 4)
       .attr('rx', (cfg.cornerRadius ?? 4) + 2)
       .attr('stroke', d => get(selectedNodeInfo)?.id === d.data.id ? '#3b82f6' : 'transparent');
+
+    // Dim sibling nodes when a selection is active
+    nodeUpdate.transition(tFill)
+      .style('opacity', d => {
+        const sel = get(selectedNodeInfo);
+        if (!sel) return 1;
+        if (d.data.id === sel.id) return 1;
+        return d.parent?.children?.some(c => c.data.id === sel.id) ? 0.3 : 1;
+      });
 
     // Bar area click → select/filter; expand button click → drill/collapse
     nodeUpdate.on('click', (event, d) => handleBarClick(event, d));
