@@ -135,12 +135,11 @@ async function fetchEncodingMap() {
       const tplStr = typeof rawTemplate === 'string' ? rawTemplate : JSON.stringify(rawTemplate);
       console.log('[DecompTree] Tooltip template found:', tplStr);
       tooltipTemplate.set(tplStr);
-      statusMessage.set(`Tooltip template found ✓`);
     } else {
       console.log('[DecompTree] No tooltip template found in marksSpec. Keys were:', Object.keys(marksSpec));
-      tooltipTemplate.set(null);
-      // Surface marksSpec keys in the status bar so we can identify the right property without DevTools
-      statusMessage.set(`marksSpec keys: ${Object.keys(marksSpec).join(', ')}`);
+      // Surface marksSpec keys in the tooltip narrative so they're visible without DevTools.
+      // Remove this diagnostic once the correct property name is confirmed.
+      tooltipTemplate.set(`[Diagnostic] marksSpec keys: ${Object.keys(marksSpec).join(', ')}`);
     }
 
     return map;
