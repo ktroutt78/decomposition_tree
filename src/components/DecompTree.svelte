@@ -822,11 +822,12 @@
     {@const sx = hintAnchor.tx * currentZoom.k + currentZoom.x}
     {@const sy = hintAnchor.ty * currentZoom.k + currentZoom.y}
     <div class="drill-hint" style="left:{sx}px; top:{sy + 14}px">
-      <svg class="hint-arrow" width="16" height="14" viewBox="0 0 16 14" fill="none">
-        <path d="M8 14 C4 14 1 10 1 6 C1 2 4 0 8 0" stroke="white" stroke-width="1.8" stroke-linecap="round" fill="none" opacity="0.7"/>
-        <path d="M6 0 L8 0 L8 4" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" fill="none" opacity="0.7"/>
+      <span>Click</span>
+      <svg width="20" height="20" viewBox="0 0 20 20" style="flex-shrink:0; vertical-align:middle">
+        <circle cx="10" cy="10" r="10" fill="#5b8dee"/>
+        <text x="10" y="15" text-anchor="middle" fill="white" font-size="16" font-weight="700" font-family="system-ui, sans-serif">+</text>
       </svg>
-      <span>Click <strong>+</strong> to drill into an attribute</span>
+      <span>to drill into an attribute</span>
     </div>
   {/if}
 
@@ -963,35 +964,42 @@
     display: flex;
     align-items: center;
     gap: 8px;
-    background: #1e293b;
-    color: white;
+    background: white;
+    color: #1e293b;
+    border: 1px solid #e2e8f0;
     border-radius: 10px;
     padding: 11px 18px;
     font-size: 14px;
     font-weight: 500;
     white-space: nowrap;
     pointer-events: none;
-    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.28);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.12);
     transform: translateX(-50%);
     z-index: 8;
     animation: hint-pop 0.35s cubic-bezier(0.22, 1, 0.36, 1);
   }
 
-  /* Upward-pointing triangle connecting hint to the + button */
+  /* Bordered upward-pointing triangle: ::before = border layer, ::after = fill layer */
   .drill-hint::before {
     content: '';
     position: absolute;
-    top: -9px;
+    top: -10px;
+    left: 50%;
+    transform: translateX(-50%);
+    border-width: 0 10px 10px 10px;
+    border-style: solid;
+    border-color: transparent transparent #e2e8f0 transparent;
+  }
+
+  .drill-hint::after {
+    content: '';
+    position: absolute;
+    top: -8px;
     left: 50%;
     transform: translateX(-50%);
     border-width: 0 9px 9px 9px;
     border-style: solid;
-    border-color: transparent transparent #1e293b transparent;
-  }
-
-  .hint-arrow {
-    flex-shrink: 0;
-    opacity: 0.85;
+    border-color: transparent transparent white transparent;
   }
 
   @keyframes hint-pop {
