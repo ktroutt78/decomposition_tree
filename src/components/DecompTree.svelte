@@ -655,24 +655,9 @@
       });
 
     } else {
-      // Un-drilled node: check if any sibling has already been expanded further
-      // (i.e. has children). If so, the dimension used for those children is the
-      // level lock — auto-drill by that dimension, no picker needed.
-      // NOTE: s._drillDimension is the dimension that CREATED s, not what s was
-      // drilled by. The "next level" dimension lives on s.children[0]._drillDimension.
-      const drilledSibling = siblings.find(s => s.id !== node.id && s.children?.length > 0);
-      const siblingDim = drilledSibling?.children?.[0]?._drillDimension ?? null;
-      if (siblingDim) {
-        const siblingSort = drilledSibling?.children?.[0]?._sortOrder || 'desc';
-        const updated = drillDown(node, siblingDim, $encodingMap, $config.maxChildrenShown, $config.excludeNulls, siblingSort);
-        treeRoot.update(root => {
-          let r = updateNodeInTree(root, node.id, () => updated);
-          return collapseExpandedSiblings(r, siblings, node.id);
-        });
-        statusMessage.set(`Drilled into: ${siblingDim}`);
-      } else {
-        pendingDrillNode.set(node);
-      }
+      // Un-drilled node: always show the DimensionPicker so the user can choose
+      // any dimension. Auto-drill by sibling dimension only happens on bar click.
+      pendingDrillNode.set(node);
     }
   }
 
