@@ -324,7 +324,9 @@
     const headerMap = new Map(); // key: dataMain → { dim, dataMain, isLR, sortOrder }
     for (const d of nodes) {
       if (!d.parent || !d.data._drillDimension) continue;
-      if (d.parent.children[0] !== d) continue; // first child only
+      // No first-child-only restriction: if the first sibling was reset its
+      // _drillDimension is null, so let any sibling register the header.
+      // headerMap deduplicates by position — first match wins.
       const dataMain = isLR ? posX(d) : posY(d);
       if (!headerMap.has(dataMain)) {
         headerMap.set(dataMain, {
