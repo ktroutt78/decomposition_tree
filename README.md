@@ -109,6 +109,27 @@ Open the settings panel with the ⚙ gear icon in the top-right corner. Settings
 | Show measure name | Prefix the value line with the measure name | On |
 | Show | Value & %, Value only, or % only | Value & % |
 
+### Tooltip
+| Setting | Description | Default |
+|---|---|---|
+| Narrative template | Custom template shown in the hover tooltip. When filled in, replaces the default Value / % of Parent / Records rows entirely. Leave blank to use the default layout. | (blank) |
+
+**Available placeholders:**
+- `<value>` — the node's formatted measure value
+- `<pct>` — percentage of parent
+- `<count>` — record count
+- `<DimensionName>` — value of any dimension in the drill path, e.g. `<Region>`, `<Category>`
+- `<FieldName>` — value of any field on the Tooltip shelf, e.g. `<SUM(Profit)>`
+
+Newlines in the template are preserved in the tooltip. Example:
+```
+Sales: <value>  (<pct> of parent)
+Profit: <SUM(Profit)>
+Records: <count>
+
+<Region> — review quarterly performance targets.
+```
+
 ### Connection
 | Setting | Description |
 |---|---|
@@ -124,6 +145,42 @@ Open the settings panel with the ⚙ gear icon in the top-right corner. Settings
 - **Marks card changes** (adding/removing dimensions from the Dimension shelf) trigger a data refresh without resetting expansion
 - **Max Children changes** in Settings immediately re-apply the (Other) grouping without requiring a collapse/expand cycle
 - The **Reload** button performs a full reset if you need to start from scratch
+
+---
+
+## Data Privacy & Security
+
+**Your data never leaves your machine.**
+
+This extension is a static JavaScript application. Here is exactly what happens to your data:
+
+### How data flows
+
+1. **Extension code loads once from GitHub Pages** — Tableau Desktop downloads the HTML, JavaScript, and CSS bundle from `ktroutt78.github.io` when the extension is first opened. This is the only network request the extension ever makes.
+2. **All data stays inside Tableau Desktop** — Once loaded, the extension communicates with Tableau via the local [Tableau Extensions API](https://tableau.github.io/extensions-api/). Data is read from your worksheet using in-process API calls (`getSummaryDataAsync`, `getVisualSpecificationAsync`). These calls happen entirely within Tableau Desktop's embedded browser — no data is transmitted over the network.
+3. **All computation is local** — The tree layout, aggregation, and rendering are performed by D3.js and Svelte running in Tableau's embedded Chromium process. Nothing is sent to an external server.
+4. **Settings are stored by Tableau** — Configuration is saved to the workbook via Tableau's own extension settings API (`tableau.extensions.settings`), not to any external service.
+
+### What GitHub Pages does and does not see
+
+| | GitHub Pages |
+|---|---|
+| Serves the JS/CSS/HTML bundle on first load | ✓ |
+| Receives any worksheet data | ✗ |
+| Receives any dimension or measure values | ✗ |
+| Tracks usage or analytics | ✗ |
+| Stores any user data | ✗ |
+
+### Self-hosting
+
+If your organization's policy requires that even the extension code not be fetched from a public URL, you can self-host:
+
+1. Clone the repository and run `npm run build`
+2. Serve the `docs/` folder from any internal web server (IIS, nginx, etc.) over HTTPS
+3. Update the `<source-location>` URL in `DecompositionTreeV2.trex` to point to your internal server
+4. Load the modified `.trex` file in Tableau Desktop
+
+All behavior is identical — the extension code simply loads from your own server instead of GitHub Pages.
 
 ---
 
