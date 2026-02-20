@@ -112,9 +112,10 @@ Open the settings panel with the ⚙ gear icon in the top-right corner. Settings
 ### Tooltip
 | Setting | Description | Default |
 |---|---|---|
-| Narrative template | Custom template shown in the hover tooltip. Replaces the default rows. Pre-filled with the default layout as a starting point — edit or clear as needed. | `Value: <value>` / `% of Parent: <pct>` / `Records: <count>` |
+| Narrative template | Custom template shown in the hover tooltip. Replaces the default rows. Pre-filled with the default layout as a starting point — edit or clear as needed. | `<measure>: <value>` / `% of Parent: <pct>` / `Records: <count>` |
 
 **Available placeholders:**
+- `<measure>` — the measure display name (alias if set, otherwise auto-stripped field name, e.g. "Profit")
 - `<value>` — the node's formatted measure value
 - `<pct>` — percentage of parent
 - `<count>` — record count

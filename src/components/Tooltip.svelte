@@ -3,7 +3,7 @@
   export let y = 0;
   export let data = null;
 
-  import { tooltipFieldNames } from '../stores/encodings.js';
+  import { tooltipFieldNames, encodingMap } from '../stores/encodings.js';
   import { config } from '../stores/config.js';
   import { formatValue } from '../lib/formatters.js';
 
@@ -17,9 +17,10 @@
     if (!template?.trim() || !node) return null;
     const vals = {};
     // Built-in placeholders
-    vals['value'] = formatValue(node.value, $config);
-    vals['pct']   = node.depth > 0 ? `${node.percentOfParent?.toFixed(1)}%` : '100%';
-    vals['count'] = node.count?.toLocaleString() ?? '';
+    vals['value']   = formatValue(node.value, $config);
+    vals['pct']     = node.depth > 0 ? `${node.percentOfParent?.toFixed(1)}%` : '100%';
+    vals['count']   = node.count?.toLocaleString() ?? '';
+    vals['measure'] = $config.measureAlias?.trim() || $encodingMap.value?.[0]?.name || 'Value';
     // Dimension path values
     for (const { field, value } of node.dimensionPath || []) {
       vals[field] = value;
