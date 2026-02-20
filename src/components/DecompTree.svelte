@@ -283,6 +283,7 @@
     const nodeEnter = nodeSel.enter().append('g')
       .attr('class', 'tree-node')
       .attr('transform', xform)
+      .style('opacity', 0)
       .on('mousemove', handleMouseMove)
       .on('mouseleave', () => { tooltipVisible = false; });
 
