@@ -505,12 +505,14 @@
   // A link target is "active" when the selected node is that node or a descendant of it
   // (i.e. the selected node's ID starts with the target's ID followed by '|').
   function resolveLinkColor(link, sel, cfg) {
-    const isNeg = link.target.data.value < 0;
-    if (isNeg) return cfg.linkColorNegative || '#f472b6';
     if (sel) {
       const tid = link.target.data.id;
       const isActive = sel.id === tid || sel.id.startsWith(tid + '|');
-      if (isActive) return cfg.linkColorActive || '#5b8dee';
+      if (isActive) {
+        return link.target.data.value < 0
+          ? cfg.linkColorNegative || '#f472b6'
+          : cfg.linkColorActive   || '#5b8dee';
+      }
     }
     return cfg.linkColorInactive || '#cbd5e1';
   }
