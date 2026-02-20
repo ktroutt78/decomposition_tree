@@ -30,17 +30,25 @@ An interactive hierarchical decomposition tree built with Svelte and D3. Drop a 
 ## Using the Extension
 
 ### Drilling Down
-- **Click any node** to drill into it. If multiple breakdown dimensions are available, a picker dialog will appear — choose which dimension to split by
-- **Sibling auto-drill:** Once one node in a group has been drilled (e.g. "West" drilled by Category), clicking an undrilled sibling (e.g. "East") automatically applies the same dimension — no picker needed
-- **One expansion at a time:** Drilling a sibling automatically collapses the previously expanded sibling, keeping the view focused
+- **Click any node** to open the **Drill Into** picker. Choose which dimension to split by and the initial **sort order** (Descending or Ascending)
+- **Sibling auto-drill:** Once one node in a group has been drilled, clicking an undrilled sibling automatically applies the same dimension and sort order — no picker shown
+- **One expansion at a time:** Drilling a sibling automatically collapses any other expanded sibling in the group, keeping the view focused
 
 ### Collapsing & Re-expanding
-- Click an expanded node to **collapse** it
-- Click a collapsed node to **re-expand** it instantly (no picker, uses the same dimension)
-- Click the **↺ icon** on a collapsed node to **reset** it and pick a different breakdown dimension
+- Click the **− button** on an expanded node to collapse it (drill state is preserved)
+- Click the **+ button** on a collapsed node to re-expand it instantly (same dimension, no picker)
+- Click an already-expanded node's **+ button** again to fully **reset** it and pick a different dimension next time
+
+### Expand / Collapse Button Position
+- **Left→Right mode:** The +/− button sits just to the **right** of the bar, outside the node card
+- **Top→Bottom mode:** The +/− button sits just **below** the bar, centered — clicking expands children downward
+
+### Sorting
+- **Initial sort:** Set ascending or descending in the Drill Into picker before drilling
+- **Inline sort toggle:** After drilling, a clickable **↑ / ↓ arrow** appears in the column header label. Click it to reverse the sort order for that entire column without collapsing the view
 
 ### Other / Overflow
-- When a drilled node has more members than **Max Children**, the top N are shown and remaining members are grouped into a single **(Other)** child at the bottom
+- When a drilled node has more members than **Max Children**, the top N are shown and the remaining members are grouped into a single **(Other)** child
 - Drilling into **(Other)** is supported
 
 ### Toolbar
@@ -56,13 +64,12 @@ Open the settings panel with the ⚙ gear icon in the top-right corner. Settings
 ### Layout
 | Setting | Description | Default |
 |---|---|---|
-| Orientation | Left→Right or Top→Bottom tree layout | Left→Right |
+| Orientation | **Left→Right:** horizontal bars in a left-to-right tree. **Top→Bottom:** vertical column bars — each bar grows upward; labels sit to the right of the bar; children expand downward | Left→Right |
 | Initial alignment | Where the root node is positioned on first render | Center |
-| Node width | Width of each bar node (px) | 200 |
-| Node height | Height of each bar node (px) | 86 |
-| Level spacing | Horizontal gap between depth levels (px) | 280 |
-| Sibling spacing | Vertical gap between sibling nodes (px) | 20 |
-| Bar height | Thickness of the filled bar inside each node (px) | 20 |
+| Node width | Width allocated per node slot (px) | 200 |
+| Level spacing | Gap between depth levels (px) | 280 |
+| Sibling spacing | Gap between sibling nodes (px) | 20 |
+| Bar height | Bar thickness in LR mode; maximum bar column height in TB mode (px) | 20 |
 | Node corner radius | Roundness of the node card corners (0–24) | 10 |
 | Bar corner radius | Roundness of the filled bar ends (0–24) | 4 |
 | Max children shown | Maximum named children per drill; excess grouped into (Other) | 10 |
@@ -84,11 +91,11 @@ Open the settings panel with the ⚙ gear icon in the top-right corner. Settings
 ### Display
 | Setting | Description | Default |
 |---|---|---|
-| Measure display name | Override the measure label (e.g. "Revenue" instead of "SUM(Sales)"). Auto-populated from the field name on load | Auto |
-| Value format | Auto (reads Tableau formatting), Number, Currency, Percentage | Auto |
+| Measure display name | Override the measure label (e.g. "Revenue" instead of "SUM(Sales)"). Auto-stripped of aggregation prefix (SUM/AVG/etc.) on load | Auto |
+| Value format | Auto (reads Tableau's native number format), Number, Currency, Percentage | Auto |
 | Currency symbol | Used when Value format is set to Currency | $ |
-| Show percentage | Show % of parent on each node | On |
-| Show group count | Show how many child groups a drilled node has | On |
+| Show percentage | Show % of parent value on each node label. Percentage sign matches the sign of the child's value | On |
+| Show group count | Show how many child groups a drilled node has (e.g. "4 groups") | On |
 | Exclude nulls | Hide null/empty dimension members when drilling | Off |
 
 ### Labels
@@ -113,8 +120,9 @@ Open the settings panel with the ⚙ gear icon in the top-right corner. Settings
 ## Filter & Data Interaction
 
 - **Tableau filters applied to the sheet** update the tree values and structure automatically — the expansion state (which nodes are drilled and which are collapsed) is **preserved** across filter changes
-- **Measure changes** also preserve expansion state — the same drill path is replayed on the new measure's data
+- **Measure changes** also preserve expansion state — the same drill path is replayed on the new measure's data, and the measure alias is auto-updated to match the new field name
 - **Marks card changes** (adding/removing dimensions from the Dimension shelf) trigger a data refresh without resetting expansion
+- **Max Children changes** in Settings immediately re-apply the (Other) grouping without requiring a collapse/expand cycle
 - The **Reload** button performs a full reset if you need to start from scratch
 
 ---
