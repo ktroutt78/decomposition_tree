@@ -10,10 +10,7 @@ Enhancement IDs use the format **EBL-XXX**. Reference the ID when requesting an 
 
 | ID | Size | Description | Notes |
 |---|---|---|---|
-| EBL-001 | **L** | **Dashboard Actions — pass selected value as filter** | When user clicks a child node (e.g. "Technology" under Category), pass that dimension + value as a filter action to other sheets on the Tableau dashboard. Uses the Tableau Extensions `dashboard.extensions.dashboardContent.dashboard.applyFilterAsync` API. Requires click-state management and a settings option to enable/disable. |
-| EBL-002 | **S** | **Dim unselected nodes on click** | When a child node is clicked/selected, visually dim all sibling nodes not in focus (D3 opacity change). Toggle off when clicking elsewhere or the same node again. Works well alongside EBL-001. |
 | EBL-003 | **XL** | **View underlying data from tooltip** | Add a button inside the tooltip to open a detail drawer showing all rows that make up the selected node — displaying dimension attributes from the Marks card. Requires a new modal/table component, row pagination for large datasets, and formatting logic. |
-| EBL-004 | **M** | **Display custom tooltip text from Tableau** | If the user types custom text in Tableau's Tooltip editor on the Marks card, display it in the extension's hover tooltip. Requires reading the tooltip spec string from the Tableau viz encoding and rendering it alongside the existing tooltip fields. |
 | EBL-005 | **M** | **Connector color settings** | Add connector color controls to Settings. Three states: Active (node in the selected bar's ancestor path — defaults to current color scheme), Inactive (unselected connectors — defaults to grey), and Negative (connector to a negative-value node — defaults to current negative color). Connector opacity should default to ~90%. Tracing the active path requires walking from the selected node up through parent nodes in the D3 hierarchy. |
 | EBL-006 | **M** | **Bar scale mode setting** | Add a "Bar scale" selector in Settings with three options: **Parent Node** (bar width/height is relative to the parent's value — current behavior, remains default), **Top Node** (all bars scaled relative to the root total), **Level Maximum** (each bar scaled relative to the largest value at the same depth level). Level Maximum requires a tree traversal pass to compute per-depth maximums before rendering. |
 | EBL-007 | **S** | **Column header formatting** | Add a "Header" section in Settings with text size and color controls for the dimension column headers (the labels that appear above each drilled column, e.g. "Region", "Category"). Separate from the node heading/subheading font settings. |
@@ -57,6 +54,14 @@ Enhancement IDs use the format **EBL-XXX**. Reference the ID when requesting an 
 | C-028 | Alignment control (Top / Centered) for LR orientation |
 | C-029 | Top-left alignment with `topAlignHier` post-processing |
 | C-030 | GitHub Pages deployment from `docs/` folder |
+
+### v2.2 — Dashboard interaction & tooltip
+
+| ID | Description |
+|---|---|
+| EBL-001 | Dashboard Actions — bar click selects marks in Tableau, triggering native "Use as Filter" to propagate selection to other sheets on the dashboard; click again or click background to clear |
+| EBL-002 | Dim unselected nodes on click — sibling nodes fade to 30% opacity when a node is selected; clears on deselect or background click |
+| EBL-004 | Tooltip narrative template — config-driven textarea replaces default tooltip rows; supports `<measure>`, `<value>`, `<pct>`, `<count>`, dimension path, and tooltip shelf field placeholders; pre-filled with default layout as a starting point |
 
 ### v2.1 — Interaction & layout refinements
 
