@@ -121,8 +121,6 @@
     const unsubSelected = selectedNodeInfo.subscribe(() => {
       if (!svgEl) return;
       const sel = get(selectedNodeInfo);
-      d3.select(svgEl).selectAll('.selection-ring')
-        .attr('stroke', d => sel?.id === d.data.id ? '#3b82f6' : 'transparent');
       d3.select(svgEl).selectAll('.tree-node')
         .transition().duration(200)
         .style('opacity', d => {
@@ -319,12 +317,6 @@
     nodeEnter.append('text').attr('class', 'expand-icon')
       .attr('text-anchor', 'middle');
 
-    // Selection ring — invisible by default; shown when node is the dashboard filter target
-    nodeEnter.append('rect').attr('class', 'selection-ring')
-      .attr('fill', 'none')
-      .attr('stroke', 'transparent')
-      .attr('stroke-width', 2)
-      .attr('pointer-events', 'none');
 
     // ── UPDATE (enter + existing) ──────────────────────────────────────────
     const nodeUpdate = nodeEnter.merge(nodeSel);
@@ -434,15 +426,6 @@
       .attr('y', isLR ? barCY + 5 : TB_EXPAND_CY + 5)
       .attr('visibility', d => showExpand(d) ? 'visible' : 'hidden')
       .text(d => isExpanded(d) ? '−' : '+');
-
-    // Selection ring: position and highlight selected node
-    nodeUpdate.select('.selection-ring')
-      .attr('x',      isLR ? -nw / 2 - 2      : -TB_BAR_W / 2 - 2)
-      .attr('y',      isLR ? -nh / 2 - 2       : TB_BAR_TOP - 2)
-      .attr('width',  isLR ? nw + 4            : TB_BAR_W + 4)
-      .attr('height', isLR ? nh + 4            : TB_BAR_MAX_H + 4)
-      .attr('rx', (cfg.cornerRadius ?? 4) + 2)
-      .attr('stroke', d => get(selectedNodeInfo)?.id === d.data.id ? '#3b82f6' : 'transparent');
 
     // Dim sibling nodes when a selection is active
     nodeUpdate.transition(tFill)
