@@ -32,7 +32,7 @@ export const defaultConfig = {
   showMeasureName: true,
   labelMode: 'both',
   animationDuration: 300,
-  initialAlignment: 'top'
+  initialAlignment: 'top-left'
 };
 
 export const config = writable({ ...defaultConfig });
