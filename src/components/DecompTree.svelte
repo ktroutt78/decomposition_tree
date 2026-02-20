@@ -121,6 +121,7 @@
     const unsubSelected = selectedNodeInfo.subscribe(() => {
       if (!svgEl) return;
       const sel = get(selectedNodeInfo);
+      const cfg = get(config);
       d3.select(svgEl).selectAll('.tree-node')
         .transition().duration(200)
         .style('opacity', d => {
@@ -128,6 +129,9 @@
           if (d.data.id === sel.id) return 1;
           return d.parent?.children?.some(c => c.data.id === sel.id) ? 0.3 : 1;
         });
+      d3.select(svgEl).selectAll('.tree-link')
+        .transition().duration(200)
+        .attr('stroke', d => resolveLinkColor(d, sel, cfg));
     });
 
     return () => { unsubRoot(); unsubConfig(); unsubSelected(); };
@@ -288,16 +292,23 @@
     const linkSel = mainGroup.selectAll('.tree-link')
       .data(links, d => d.target.data.id);
 
+    const linkOpacity = cfg.linkOpacity ?? 0.9;
+    const sel = get(selectedNodeInfo);
+
     linkSel.exit().transition(tLayout).style('opacity', 0).remove();
 
     linkSel.enter().append('path')
       .attr('class', 'tree-link')
       .attr('d', linkGen)
-      .style('opacity', 0)
-      .transition(tLayout).style('opacity', 1);
+      .attr('stroke', d => resolveLinkColor(d, sel, cfg))
+      .attr('stroke-opacity', 0)
+      .transition(tLayout).attr('stroke-opacity', linkOpacity);
 
     mainGroup.selectAll('.tree-link')
-      .transition(tLayout).attr('d', linkGen);
+      .transition(tLayout)
+      .attr('d', linkGen)
+      .attr('stroke', d => resolveLinkColor(d, sel, cfg))
+      .attr('stroke-opacity', linkOpacity);
 
     // ── Nodes ─────────────────────────────────────────────────────────────
     const nodeSel = mainGroup.selectAll('.tree-node')
@@ -487,6 +498,20 @@
       }
     }
     colHeaders = Array.from(headerMap.values());
+  }
+
+  // Returns the stroke color for a link based on selection state and node value.
+  // Priority: active path > negative node > inactive.
+  // A link target is "active" when the selected node is that node or a descendant of it
+  // (i.e. the selected node's ID starts with the target's ID followed by '|').
+  function resolveLinkColor(link, sel, cfg) {
+    if (sel) {
+      const tid = link.target.data.id;
+      const isActive = sel.id === tid || sel.id.startsWith(tid + '|');
+      if (isActive) return cfg.linkColorActive || '#5b8dee';
+    }
+    if (link.target.data.value < 0) return cfg.linkColorNegative || '#f472b6';
+    return cfg.linkColorInactive || '#cbd5e1';
   }
 
   // Build a link generator that respects cfg.linkStyle: 'step' | 'curved' | 'straight'

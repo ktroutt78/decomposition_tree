@@ -268,6 +268,48 @@
       </div>
     </section>
 
+    <!-- ── Connectors ───────────────────────────────────── -->
+    <section class="config-section">
+      <h3 class="section-title">Connectors</h3>
+
+      <label class="color-picker-label" style="margin-bottom: var(--space-3)">
+        <span class="field-label" style="margin-bottom:0">Active path color</span>
+        <div class="color-pick-row">
+          <input type="color" bind:value={draft.linkColorActive} class="color-input" />
+          <span class="color-hex">{draft.linkColorActive}</span>
+        </div>
+      </label>
+
+      <label class="color-picker-label" style="margin-bottom: var(--space-3)">
+        <span class="field-label" style="margin-bottom:0">Inactive color</span>
+        <div class="color-pick-row">
+          <input type="color" bind:value={draft.linkColorInactive} class="color-input" />
+          <span class="color-hex">{draft.linkColorInactive}</span>
+        </div>
+      </label>
+
+      <label class="color-picker-label" style="margin-bottom: var(--space-3)">
+        <span class="field-label" style="margin-bottom:0">Negative node color</span>
+        <div class="color-pick-row">
+          <input type="color" bind:value={draft.linkColorNegative} class="color-input" />
+          <span class="color-hex">{draft.linkColorNegative}</span>
+        </div>
+      </label>
+
+      <div class="field-group">
+        <div class="range-header">
+          <label class="field-label" for="linkOpacity">Opacity</label>
+          <span class="range-val">{Math.round((draft.linkOpacity ?? 0.9) * 100)}%</span>
+        </div>
+        <input
+          id="linkOpacity"
+          type="range" min="0.1" max="1" step="0.05"
+          bind:value={draft.linkOpacity}
+          class="range-input"
+        />
+      </div>
+    </section>
+
     <!-- ── Display ──────────────────────────────────────── -->
     <section class="config-section">
       <h3 class="section-title">Display</h3>
