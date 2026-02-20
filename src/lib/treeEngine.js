@@ -137,6 +137,43 @@ export function updateNodeInTree(root, targetId, transformFn) {
 }
 
 /**
+ * Toggle the sort order for all nodes drilled by `dim`, preserving sub-expansions.
+ * Descending ↔ Ascending.
+ */
+export function toggleSortAtDimension(root, dim, encMap, maxChildren, excludeNulls = false) {
+  if (!root.children) return root;
+
+  const drillDim = root.children[0]?._drillDimension;
+  const currentSort = root.children[0]?._sortOrder || 'desc';
+
+  if (drillDim === dim) {
+    const newSort = currentSort === 'desc' ? 'asc' : 'desc';
+    const reDrilled = drillDown(root, dim, encMap, maxChildren, excludeNulls, newSort);
+    if (!reDrilled.children) return root;
+
+    // Match new children to old by label, restore collapse + sub-expansions
+    const newChildren = reDrilled.children.map(newChild => {
+      const oldChild = root.children.find(oc => oc.label === newChild.label);
+      if (!oldChild) return newChild;
+      let result = { ...newChild, _collapsed: oldChild._collapsed };
+      if (oldChild.children && !oldChild._collapsed) {
+        result = reapplyExpansion(oldChild, result, encMap, maxChildren, excludeNulls);
+      }
+      return result;
+    });
+    return { ...reDrilled, children: newChildren };
+  }
+
+  // Recurse into children to find the matching dimension at a deeper level
+  return {
+    ...root,
+    children: root.children.map(child =>
+      toggleSortAtDimension(child, dim, encMap, maxChildren, excludeNulls)
+    )
+  };
+}
+
+/**
  * Walk the tree to find the direct parent of the node with childId.
  * Returns the parent data node, or null if not found.
  */

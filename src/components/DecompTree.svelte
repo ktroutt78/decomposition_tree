@@ -5,7 +5,7 @@
   import { treeRoot, pendingDrillNode, statusMessage } from '../stores/treeState.js';
   import { config } from '../stores/config.js';
   import { encodingMap } from '../stores/encodings.js';
-  import { drillDown, toggleCollapse, updateNodeInTree, findParent } from '../lib/treeEngine.js';
+  import { drillDown, toggleCollapse, updateNodeInTree, findParent, toggleSortAtDimension } from '../lib/treeEngine.js';
   import { formatValue, truncate } from '../lib/formatters.js';
   import Tooltip from './Tooltip.svelte';
   import DimensionPicker from './DimensionPicker.svelte';
@@ -320,13 +320,18 @@
     // ── Collect column header data for HTML overlay ────────────────────────
     // LR: one header per unique column (posX = horizontal); rendered at top.
     // TB: one header per unique depth row (posY = vertical); rendered at left.
-    const headerMap = new Map(); // key: dataMain → { dim, dataMain, isLR }
+    const headerMap = new Map(); // key: dataMain → { dim, dataMain, isLR, sortOrder }
     for (const d of nodes) {
       if (!d.parent || !d.data._drillDimension) continue;
       if (d.parent.children[0] !== d) continue; // first child only
       const dataMain = isLR ? posX(d) : posY(d);
       if (!headerMap.has(dataMain)) {
-        headerMap.set(dataMain, { dim: d.data._drillDimension, dataMain, isLR });
+        headerMap.set(dataMain, {
+          dim: d.data._drillDimension,
+          dataMain,
+          isLR,
+          sortOrder: d.data._sortOrder || 'desc'
+        });
       }
     }
     colHeaders = Array.from(headerMap.values());
@@ -504,6 +509,13 @@
     if (root) doFitToView(root, cfg);
   }
 
+  function handleSortToggle(dim) {
+    const cfg = get(config);
+    treeRoot.update(root =>
+      toggleSortAtDimension(root, dim, $encodingMap, cfg.maxChildrenShown, cfg.excludeNulls)
+    );
+  }
+
   function handleDrillSelect(dimName, sortOrder = 'desc') {
     if (!$pendingDrillNode) return;
     const pendingNode = $pendingDrillNode;
@@ -539,8 +551,12 @@
     {@const style = h.isLR
       ? `left:${sc}px; top:8px; transform:translateX(-50%)`
       : `left:8px; top:${sc}px; transform:translateY(-50%)`}
-    <div class="col-header-overlay" style={style}>
-      <div class="col-header-title">▸ by {h.dim}</div>
+    <!-- svelte-ignore a11y-click-events-have-key-events a11y-no-static-element-interactions -->
+    <div class="col-header-overlay" style={style} on:click={() => handleSortToggle(h.dim)}>
+      <div class="col-header-title">
+        ▸ by {h.dim}
+        <span class="sort-arrow">{h.sortOrder === 'asc' ? '↑' : '↓'}</span>
+      </div>
     </div>
   {/each}
 
@@ -640,11 +656,14 @@
     flex-direction: column;
     align-items: center;
     gap: 3px;
-    pointer-events: none;
     z-index: 5;
+    cursor: pointer;
   }
 
   .col-header-title {
+    display: flex;
+    align-items: center;
+    gap: 5px;
     font-size: 12px;
     font-weight: 600;
     color: #334155;
@@ -655,6 +674,19 @@
     border: 1px solid #e2e8f0;
     backdrop-filter: blur(4px);
     box-shadow: 0 1px 4px rgba(0, 0, 0, 0.07);
+    transition: background 0.15s, border-color 0.15s;
+    user-select: none;
+  }
+
+  .col-header-overlay:hover .col-header-title {
+    background: rgba(255, 255, 255, 1);
+    border-color: #94a3b8;
+  }
+
+  .sort-arrow {
+    font-size: 11px;
+    color: #64748b;
+    font-weight: 700;
   }
 
 
