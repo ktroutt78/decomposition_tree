@@ -65,7 +65,7 @@ Open the settings panel with the ⚙ gear icon in the top-right corner. Settings
 | Setting | Description | Default |
 |---|---|---|
 | Orientation | **Left→Right:** horizontal bars in a left-to-right tree. **Top→Bottom:** vertical column bars — each bar grows upward; labels sit to the right of the bar; children expand downward | Left→Right |
-| Initial alignment | Where the root node is positioned on first render | Center |
+| Initial alignment | Where the root node is positioned on first render | Top |
 | Node width | Width allocated per node slot (px) | 200 |
 | Level spacing | Gap between depth levels (px) | 280 |
 | Sibling spacing | Gap between sibling nodes (px) | 20 |
