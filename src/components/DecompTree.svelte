@@ -127,11 +127,12 @@
     const endColor   = cfg.colorTheme === 'custom' ? (cfg.customColorEnd   || startColor) : theme.end;
     const colorInterp = d3.interpolateRgb(startColor, endColor);
 
-    // Returns a gradient color for a node based on its position among siblings.
-    // Default themes: largest (idx=0) gets the dark end, smallest gets the light end.
-    // Custom gradient: largest gets the first color chosen, smallest gets the last.
+    // Returns a color for a node based on its position among siblings.
+    // When useGradient is off, all positive bars share the start color.
+    // Default themes: largest (idx=0) → darkest; Custom: largest → first color chosen.
     const isCustom = cfg.colorTheme === 'custom';
     function posColor(d) {
+      if (!cfg.useGradient) return colorInterp(isCustom ? 0 : 1);
       if (!d.parent || !d.parent.children || d.parent.children.length <= 1) {
         return colorInterp(isCustom ? 0 : 1);
       }

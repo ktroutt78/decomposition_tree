@@ -13,6 +13,7 @@ export const defaultConfig = {
   customColorEnd: '#1a4e8a',
   linkStyle: 'curved',
   bgColor: '#ffffff',
+  useGradient: true,
   negativeColor: '#f472b6',
   barRadius: 4,
   barHeight: 20,

@@ -101,6 +101,19 @@
         </div>
       {/if}
 
+      <div class="toggle-row" style="margin-top: var(--space-3)">
+        <button
+          class="toggle-btn"
+          class:active={draft.useGradient}
+          on:click={() => draft.useGradient = !draft.useGradient}
+          aria-pressed={draft.useGradient}
+          aria-label="Apply gradient to bars"
+        >
+          <span class="toggle-thumb"></span>
+        </button>
+        <span class="toggle-label">Apply gradient to bars</span>
+      </div>
+
       <label class="color-picker-label" style="margin-top: var(--space-3)">
         <span class="field-label" style="margin-bottom:0">Negative value color</span>
         <div class="color-pick-row">
