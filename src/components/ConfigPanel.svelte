@@ -253,6 +253,19 @@
         </div>
         <input id="barHeight" type="range" min="8" max="48" step="2" bind:value={draft.barHeight} class="range-input"/>
       </div>
+
+      <div class="field-group">
+        <span class="field-label">Bar scale</span>
+        <div class="seg-control" role="group" aria-label="Bar scale">
+          {#each [['parent','Parent'],['top','Top Node'],['level','Level Max']] as [val, label]}
+            <button
+              class="seg-btn seg-btn-sm"
+              class:active={draft.barScaleMode === val}
+              on:click={() => draft.barScaleMode = val}
+            >{label}</button>
+          {/each}
+        </div>
+      </div>
     </section>
 
     <!-- ── Display ──────────────────────────────────────── -->

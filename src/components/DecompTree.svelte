@@ -249,6 +249,31 @@
     const nodes = hier.descendants();
     const links = hier.links();
 
+    // Per-depth max absolute value — used only for 'level' bar scale mode
+    const maxByDepth = {};
+    for (const d of nodes) {
+      if (d.depth === 0) continue;
+      const abs = Math.abs(d.data.value ?? 0);
+      if (abs > (maxByDepth[d.depth] ?? 0)) maxByDepth[d.depth] = abs;
+    }
+
+    // Returns the bar fill percentage (0–100) for a node based on barScaleMode.
+    // The percentage label shown on the node always uses percentOfParent regardless of mode.
+    function barPct(d) {
+      if (d.depth === 0) return 100;
+      const mode = cfg.barScaleMode || 'parent';
+      if (mode === 'top') {
+        const rootAbs = Math.abs(rootData.value ?? 1) || 1;
+        return Math.max(0, Math.min(100, Math.abs(d.data.value ?? 0) / rootAbs * 100));
+      }
+      if (mode === 'level') {
+        const levelMax = maxByDepth[d.depth] || 1;
+        return Math.max(0, Math.min(100, Math.abs(d.data.value ?? 0) / levelMax * 100));
+      }
+      // 'parent' (default) — use pre-computed percentOfParent
+      return Math.max(0, Math.min(100, Math.abs(d.data.percentOfParent ?? 100)));
+    }
+
     const posX  = isLR ? d => d.y : d => d.x;
     const posY  = isLR ? d => d.x : d => d.y;
     const xform = d => `translate(${posX(d)},${posY(d)})`;
@@ -339,15 +364,15 @@
       .attr('rx', BAR_R)
       .transition(tFill)
       .attr('width', d => {
-        const pct = Math.max(0, Math.min(100, Math.abs(d.data.percentOfParent ?? 100)));
+        const pct = barPct(d);
         return isLR ? nw * pct / 100 : TB_BAR_W;
       })
       .attr('height', d => {
-        const pct = Math.max(0, Math.min(100, Math.abs(d.data.percentOfParent ?? 100)));
+        const pct = barPct(d);
         return isLR ? BAR_H : TB_BAR_MAX_H * pct / 100;
       })
       .attr('y', d => {
-        const pct = Math.max(0, Math.min(100, Math.abs(d.data.percentOfParent ?? 100)));
+        const pct = barPct(d);
         return isLR ? barTopY : TB_BAR_BOT - TB_BAR_MAX_H * pct / 100;
       })
       .attr('fill', d => d.data.value >= 0 ? posColor(d) : negColor);

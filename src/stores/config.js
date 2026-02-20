@@ -31,6 +31,7 @@ export const defaultConfig = {
   subheadingColor: '#64748b',
   showMeasureName: true,
   labelMode: 'both',
+  barScaleMode: 'parent',
   headerFontSize: 12,
   headerColor: '#334155',
   animationDuration: 300,
