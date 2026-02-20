@@ -3,12 +3,30 @@
   export let y = 0;
   export let data = null;
 
-  import { tooltipFieldNames } from '../stores/encodings.js';
+  import { tooltipFieldNames, tooltipTemplate } from '../stores/encodings.js';
   import { config } from '../stores/config.js';
   import { formatValue } from '../lib/formatters.js';
 
   $: adjustedX = x + 248 > (window?.innerWidth ?? 9999) ? x - 260 : x;
   $: adjustedY = y + 200 > (window?.innerHeight ?? 9999) ? y - 212 : y;
+
+  // Substitute <FieldName> placeholders in the Tableau tooltip template with
+  // actual values from the hovered node. Returns null if no template is set.
+  function renderNarrative(template, node) {
+    if (!template || !node) return null;
+    const vals = {};
+    // Dimension path values: { field → value }
+    for (const { field, value } of node.dimensionPath || []) {
+      vals[field] = value;
+    }
+    // Tooltip shelf field values
+    for (const [k, v] of Object.entries(node._tooltipData || {})) {
+      vals[k] = typeof v === 'number' ? formatValue(v, $config) : String(v);
+    }
+    return template.replace(/<([^>]+)>/g, (match, ref) => vals[ref] ?? match);
+  }
+
+  $: narrative = renderNarrative($tooltipTemplate, data);
 </script>
 
 {#if data}
@@ -55,6 +73,11 @@
         </div>
       {/if}
     {/each}
+
+    {#if narrative}
+      <div class="tooltip-divider"></div>
+      <div class="tooltip-narrative">{narrative}</div>
+    {/if}
 
     <div class="tooltip-hint">
       {#if data.children && !data._collapsed}
@@ -141,6 +164,14 @@
     font-weight: var(--font-medium);
     color: var(--color-text-primary);
     text-align: right;
+  }
+
+  .tooltip-narrative {
+    font-size: var(--text-sm);
+    color: var(--color-text-secondary);
+    line-height: 1.5;
+    white-space: pre-wrap;
+    padding: var(--space-1) 0;
   }
 
   .tooltip-hint {
