@@ -435,7 +435,7 @@
           rows="4"
         ></textarea>
         <p class="field-hint">
-          Shown in the hover tooltip. Use &lt;FieldName&gt; to insert values — e.g. &lt;Region&gt;, &lt;SUM(Sales)&gt;. Supports newlines.
+          Replaces the default tooltip rows when filled in. Built-in: &lt;value&gt;, &lt;pct&gt;, &lt;count&gt;. Also supports dimension names and tooltip shelf fields, e.g. &lt;Region&gt;, &lt;SUM(Profit)&gt;.
         </p>
       </div>
     </section>

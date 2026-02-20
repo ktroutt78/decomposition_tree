@@ -10,12 +10,17 @@
   $: adjustedX = x + 248 > (window?.innerWidth ?? 9999) ? x - 260 : x;
   $: adjustedY = y + 200 > (window?.innerHeight ?? 9999) ? y - 212 : y;
 
-  // Substitute <FieldName> placeholders in the user-authored narrative template
-  // with actual values from the hovered node. Returns null if no template is set.
-  function renderNarrative(template, node) {
-    if (!template || !node) return null;
+  // Substitute <FieldName> placeholders with actual node values.
+  // Built-in: <value>, <pct>, <count>. Plus any dimension path or tooltip shelf field.
+  // When the template is non-empty it replaces the default structured rows entirely.
+  function renderTemplate(template, node) {
+    if (!template?.trim() || !node) return null;
     const vals = {};
-    // Dimension path values: { field → value }
+    // Built-in placeholders
+    vals['value'] = formatValue(node.value, $config);
+    vals['pct']   = node.depth > 0 ? `${node.percentOfParent?.toFixed(1)}%` : '100%';
+    vals['count'] = node.count?.toLocaleString() ?? '';
+    // Dimension path values
     for (const { field, value } of node.dimensionPath || []) {
       vals[field] = value;
     }
@@ -26,7 +31,7 @@
     return template.replace(/<([^>]+)>/g, (match, ref) => vals[ref] ?? match);
   }
 
-  $: narrative = renderNarrative($config.tooltipNarrative, data);
+  $: customBody = renderTemplate($config.tooltipNarrative, data);
 </script>
 
 {#if data}
@@ -44,39 +49,38 @@
 
     <div class="tooltip-divider"></div>
 
-    <div class="tooltip-row">
-      <span class="tooltip-key">Value</span>
-      <span class="tooltip-val">{formatValue(data.value, $config)}</span>
-    </div>
-
-    {#if data.depth > 0}
+    {#if customBody}
+      <div class="tooltip-body">{customBody}</div>
+    {:else}
       <div class="tooltip-row">
-        <span class="tooltip-key">% of Parent</span>
-        <span class="tooltip-val">{data.percentOfParent?.toFixed(1)}%</span>
+        <span class="tooltip-key">Value</span>
+        <span class="tooltip-val">{formatValue(data.value, $config)}</span>
       </div>
-    {/if}
 
-    <div class="tooltip-row">
-      <span class="tooltip-key">Records</span>
-      <span class="tooltip-val">{data.count?.toLocaleString()}</span>
-    </div>
-
-    {#each $tooltipFieldNames as fieldName}
-      {#if data._tooltipData?.[fieldName] !== undefined}
+      {#if data.depth > 0}
         <div class="tooltip-row">
-          <span class="tooltip-key">{fieldName}</span>
-          <span class="tooltip-val">
-            {typeof data._tooltipData[fieldName] === 'number'
-              ? formatValue(data._tooltipData[fieldName], $config)
-              : data._tooltipData[fieldName]}
-          </span>
+          <span class="tooltip-key">% of Parent</span>
+          <span class="tooltip-val">{data.percentOfParent?.toFixed(1)}%</span>
         </div>
       {/if}
-    {/each}
 
-    {#if narrative}
-      <div class="tooltip-divider"></div>
-      <div class="tooltip-narrative">{narrative}</div>
+      <div class="tooltip-row">
+        <span class="tooltip-key">Records</span>
+        <span class="tooltip-val">{data.count?.toLocaleString()}</span>
+      </div>
+
+      {#each $tooltipFieldNames as fieldName}
+        {#if data._tooltipData?.[fieldName] !== undefined}
+          <div class="tooltip-row">
+            <span class="tooltip-key">{fieldName}</span>
+            <span class="tooltip-val">
+              {typeof data._tooltipData[fieldName] === 'number'
+                ? formatValue(data._tooltipData[fieldName], $config)
+                : data._tooltipData[fieldName]}
+            </span>
+          </div>
+        {/if}
+      {/each}
     {/if}
 
     <div class="tooltip-hint">
@@ -166,10 +170,10 @@
     text-align: right;
   }
 
-  .tooltip-narrative {
+  .tooltip-body {
     font-size: var(--text-sm);
     color: var(--color-text-secondary);
-    line-height: 1.5;
+    line-height: 1.6;
     white-space: pre-wrap;
     padding: var(--space-1) 0;
   }
