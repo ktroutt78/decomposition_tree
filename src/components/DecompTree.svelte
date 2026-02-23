@@ -898,7 +898,7 @@
   // Turning OFF leaves the view where it is.
   async function increaseMaxChildren() {
     const current = get(config);
-    const newVal = Math.min(50, current.maxChildrenShown + 5);
+    const newVal = Math.min(50, current.maxChildrenShown + 1);
     if (newVal === current.maxChildrenShown) return;
     _suppressNextFit = true;
     await saveConfig({ ...current, maxChildrenShown: newVal });
@@ -906,7 +906,7 @@
 
   async function decreaseMaxChildren() {
     const current = get(config);
-    const newVal = Math.max(5, current.maxChildrenShown - 5);
+    const newVal = Math.max(1, current.maxChildrenShown - 1);
     if (newVal === current.maxChildrenShown) return;
     _suppressNextFit = true;
     await saveConfig({ ...current, maxChildrenShown: newVal });
@@ -1088,7 +1088,7 @@
                 <path d="M7 10.5V3.5M3.5 6.5L7 3l3.5 3.5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
               </svg>
             </span>
-            <strong>More children</strong> — show more groups per level (+5)
+            <strong>More children</strong> — show more groups per level (+1)
           </li>
           <li>
             <span class="help-chip">
@@ -1096,7 +1096,7 @@
                 <path d="M7 3.5v7M3.5 7.5L7 11l3.5-3.5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
               </svg>
             </span>
-            <strong>Fewer children</strong> — show fewer groups per level (−5)
+            <strong>Fewer children</strong> — show fewer groups per level (−1)
           </li>
         </ul>
 
@@ -1167,7 +1167,7 @@
         on:click={decreaseMaxChildren}
         title="Show fewer children per node (currently {$config.maxChildrenShown})"
         aria-label="Show fewer children per node"
-        disabled={$config.maxChildrenShown <= 5}
+        disabled={$config.maxChildrenShown <= 1}
       >
         <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
           <path d="M7 3.5v7M3.5 7.5L7 11l3.5-3.5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
