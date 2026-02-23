@@ -893,6 +893,22 @@
   // Toggle smart zoom on/off.
   // Turning ON also immediately zooms to the current drill level.
   // Turning OFF leaves the view where it is.
+  async function increaseMaxChildren() {
+    const current = get(config);
+    const newVal = Math.min(50, current.maxChildrenShown + 5);
+    if (newVal === current.maxChildrenShown) return;
+    _suppressNextFit = true;
+    await saveConfig({ ...current, maxChildrenShown: newVal });
+  }
+
+  async function decreaseMaxChildren() {
+    const current = get(config);
+    const newVal = Math.max(5, current.maxChildrenShown - 5);
+    if (newVal === current.maxChildrenShown) return;
+    _suppressNextFit = true;
+    await saveConfig({ ...current, maxChildrenShown: newVal });
+  }
+
   async function toggleSmartZoom() {
     const current = get(config);
     _suppressNextFit = true; // suppress the fit triggered by the config change
@@ -1008,6 +1024,33 @@
         <path d="M7 1v2.5M7 8.5v4.5M1 7h2.5M8.5 7h4.5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
       </svg>
     </button>
+
+    <!-- Max children control -->
+    <button
+      class="zoom-btn zoom-btn-children-up"
+      on:click={increaseMaxChildren}
+      title="Show more children per node (currently {$config.maxChildrenShown})"
+      aria-label="Show more children per node"
+      disabled={$config.maxChildrenShown >= 50}
+    >
+      <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+        <path d="M7 10.5V3.5M3.5 6.5L7 3l3.5 3.5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </button>
+    <div class="zoom-children-count" title="Max children shown per node">
+      {$config.maxChildrenShown}
+    </div>
+    <button
+      class="zoom-btn zoom-btn-children-down"
+      on:click={decreaseMaxChildren}
+      title="Show fewer children per node (currently {$config.maxChildrenShown})"
+      aria-label="Show fewer children per node"
+      disabled={$config.maxChildrenShown <= 5}
+    >
+      <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+        <path d="M7 3.5v7M3.5 7.5L7 11l3.5-3.5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </button>
   </div>
 
   {#if tooltipVisible && tooltipData}
@@ -1078,12 +1121,41 @@
 
   .zoom-btn-smart {
     border-top: 1px solid var(--color-border-subtle, #f1f5f9);
-    border-radius: 0 0 5px 5px;
+    border-radius: 0;
   }
 
   .zoom-btn-smart.smart-on {
     color: var(--color-accent, #4a6cf7);
     background: var(--color-accent-subtle, #eff3ff);
+  }
+
+  /* Max children control */
+  .zoom-btn-children-up {
+    border-top: 1px solid var(--color-border-subtle, #f1f5f9);
+    border-radius: 0;
+  }
+
+  .zoom-btn-children-up:disabled,
+  .zoom-btn-children-down:disabled {
+    opacity: 0.35;
+    cursor: default;
+  }
+
+  .zoom-children-count {
+    height: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+    font-weight: 700;
+    font-family: var(--font-mono, monospace);
+    color: var(--color-text-secondary, #64748b);
+    user-select: none;
+    cursor: default;
+  }
+
+  .zoom-btn-children-down {
+    border-radius: 0 0 5px 5px;
   }
 
 
