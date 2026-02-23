@@ -209,6 +209,10 @@ export function reapplyExpansion(oldNode, newNode, encMap, maxChildren, excludeN
   const reDrilled = drillDown(newNode, drillDim, encMap, maxChildren, excludeNulls, sortOrder);
   if (!reDrilled.children) return newNode;
 
+  // The previously-expanded child (if any) — used as a fallback when no label matches.
+  const expandedOldChild = oldNode.children.find(oc => oc.children?.length && !oc._collapsed);
+  let expansionApplied = false;
+
   // Match new children to old by label and restore collapse + sub-expansion
   const newChildren = reDrilled.children.map(newChild => {
     const oldChild = oldNode.children.find(oc => oc.label === newChild.label);
@@ -219,10 +223,24 @@ export function reapplyExpansion(oldNode, newNode, encMap, maxChildren, excludeN
     // Recurse into uncollapsed children that had further drilling
     if (oldChild.children && !oldChild._collapsed) {
       result = reapplyExpansion(oldChild, result, encMap, maxChildren, excludeNulls);
+      expansionApplied = true;
     }
 
     return result;
   });
+
+  // If no label match produced an expansion (e.g. the new node has completely
+  // different child values — different manufacturers under a different sub-category),
+  // fall back to expanding the first non-Other child using the old expansion pattern.
+  // This ensures the full drill depth is always preserved when switching siblings.
+  if (expandedOldChild && !expansionApplied) {
+    const idx = newChildren.findIndex(c => c.label !== '(Other)');
+    if (idx >= 0) {
+      newChildren[idx] = reapplyExpansion(
+        expandedOldChild, newChildren[idx], encMap, maxChildren, excludeNulls
+      );
+    }
+  }
 
   return { ...reDrilled, children: newChildren };
 }
