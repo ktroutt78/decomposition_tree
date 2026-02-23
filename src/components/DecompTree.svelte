@@ -1026,31 +1026,34 @@
     </button>
 
     <!-- Max children control -->
-    <button
-      class="zoom-btn zoom-btn-children-up"
-      on:click={increaseMaxChildren}
-      title="Show more children per node (currently {$config.maxChildrenShown})"
-      aria-label="Show more children per node"
-      disabled={$config.maxChildrenShown >= 50}
-    >
-      <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-        <path d="M7 10.5V3.5M3.5 6.5L7 3l3.5 3.5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
-      </svg>
-    </button>
-    <div class="zoom-children-count" title="Max children shown per node">
-      {$config.maxChildrenShown}
+    <div class="zoom-children-group">
+      <button
+        class="zoom-btn zoom-btn-children-up"
+        on:click={increaseMaxChildren}
+        title="Show more children per node (currently {$config.maxChildrenShown})"
+        aria-label="Show more children per node"
+        disabled={$config.maxChildrenShown >= 50}
+      >
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+          <path d="M7 10.5V3.5M3.5 6.5L7 3l3.5 3.5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </button>
+      <div class="zoom-children-count" title="Max children shown per node">
+        <span class="zoom-children-num">{$config.maxChildrenShown}</span>
+        <span class="zoom-children-label">max</span>
+      </div>
+      <button
+        class="zoom-btn zoom-btn-children-down"
+        on:click={decreaseMaxChildren}
+        title="Show fewer children per node (currently {$config.maxChildrenShown})"
+        aria-label="Show fewer children per node"
+        disabled={$config.maxChildrenShown <= 5}
+      >
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+          <path d="M7 3.5v7M3.5 7.5L7 11l3.5-3.5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </button>
     </div>
-    <button
-      class="zoom-btn zoom-btn-children-down"
-      on:click={decreaseMaxChildren}
-      title="Show fewer children per node (currently {$config.maxChildrenShown})"
-      aria-label="Show fewer children per node"
-      disabled={$config.maxChildrenShown <= 5}
-    >
-      <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-        <path d="M7 3.5v7M3.5 7.5L7 11l3.5-3.5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
-      </svg>
-    </button>
   </div>
 
   {#if tooltipVisible && tooltipData}
@@ -1130,32 +1133,57 @@
   }
 
   /* Max children control */
-  .zoom-btn-children-up {
+  .zoom-children-group {
     border-top: 1px solid var(--color-border-subtle, #f1f5f9);
-    border-radius: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    background: var(--color-accent-subtle, #eff3ff);
+    border-radius: 0 0 5px 5px;
+    overflow: hidden;
+  }
+
+  .zoom-children-group .zoom-btn {
+    color: var(--color-accent, #4a6cf7);
+  }
+
+  .zoom-children-group .zoom-btn:hover {
+    background: rgba(74, 108, 247, 0.15);
   }
 
   .zoom-btn-children-up:disabled,
   .zoom-btn-children-down:disabled {
-    opacity: 0.35;
+    opacity: 0.3;
     cursor: default;
   }
 
   .zoom-children-count {
-    height: 20px;
     display: flex;
+    flex-direction: column;
     align-items: center;
     justify-content: center;
-    font-size: 11px;
-    font-weight: 700;
-    font-family: var(--font-mono, monospace);
-    color: var(--color-text-secondary, #64748b);
+    padding: 4px 0 2px;
+    gap: 1px;
     user-select: none;
     cursor: default;
   }
 
-  .zoom-btn-children-down {
-    border-radius: 0 0 5px 5px;
+  .zoom-children-num {
+    font-size: 15px;
+    font-weight: 700;
+    font-family: var(--font-mono, monospace);
+    color: var(--color-accent, #4a6cf7);
+    line-height: 1;
+  }
+
+  .zoom-children-label {
+    font-size: 8px;
+    font-weight: 600;
+    color: var(--color-accent, #4a6cf7);
+    opacity: 0.65;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    line-height: 1;
   }
 
 
