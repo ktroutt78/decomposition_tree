@@ -738,13 +738,24 @@
     if (node._collapsed) {
       // Previously drilled but collapsed by one-at-a-time logic — re-expand it
       // and collapse whichever sibling is currently expanded.
-      if (get(config).smartZoom) {
+      // Also re-apply the active sibling's full expansion pattern so depth stays
+      // in sync (e.g. if Geo1 was drilled to School→SOC2 while Geo2 was collapsed
+      // at School only, clicking Geo2 should bring it up to School→SOC2 as well).
+      const cfg = get(config);
+      const encMap = get(encodingMap);
+      const activeSibling = siblings.find(s => s.id !== node.id && s.children?.length > 0 && !s._collapsed);
+
+      if (cfg.smartZoom) {
         _lastDrilledNodeId = node.id; // smart zoom to this re-expanded node + its children
       } else {
         _suppressNextFit = true;      // no smart zoom: keep current pan/zoom
       }
       treeRoot.update(root => {
-        let r = updateNodeInTree(root, node.id, n => ({ ...n, _collapsed: false }));
+        const baseNode = { ...node, _collapsed: false };
+        const updated = activeSibling
+          ? reapplyExpansion(activeSibling, baseNode, encMap, cfg.maxChildrenShown, cfg.excludeNulls)
+          : baseNode;
+        let r = updateNodeInTree(root, node.id, () => updated);
         for (const sib of siblings) {
           if (sib.id !== node.id && sib.children && !sib._collapsed) {
             r = updateNodeInTree(r, sib.id, n => ({ ...n, _collapsed: true }));
@@ -805,14 +816,23 @@
         n => ({ ...n, children: null, _drillDimension: null, _collapsed: false })));
 
     } else if (node._collapsed) {
-      // Re-expand; auto-collapse any currently-expanded siblings for one-at-a-time view
-      if (get(config).smartZoom) {
+      // Re-expand; auto-collapse any currently-expanded siblings for one-at-a-time view.
+      // Sync depth with the active sibling so multi-level expansions are preserved.
+      const cfg = get(config);
+      const encMap = get(encodingMap);
+      const activeSibling = siblings.find(s => s.id !== node.id && s.children?.length > 0 && !s._collapsed);
+
+      if (cfg.smartZoom) {
         _lastDrilledNodeId = node.id; // smart zoom to this re-expanded node + its children
       } else {
         _suppressNextFit = true;      // no smart zoom: keep current pan/zoom
       }
       treeRoot.update(root => {
-        let r = updateNodeInTree(root, node.id, n => ({ ...n, _collapsed: false }));
+        const baseNode = { ...node, _collapsed: false };
+        const updated = activeSibling
+          ? reapplyExpansion(activeSibling, baseNode, encMap, cfg.maxChildrenShown, cfg.excludeNulls)
+          : baseNode;
+        let r = updateNodeInTree(root, node.id, () => updated);
         return collapseExpandedSiblings(r, siblings, node.id);
       });
 
