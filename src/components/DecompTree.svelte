@@ -520,21 +520,53 @@
     colHeaders = Array.from(headerMap.values());
   }
 
-  // Returns the stroke color for a link based on selection state and node value.
-  // Priority: active path > negative node > inactive.
-  // A link target is "active" when the selected node is that node or a descendant of it
-  // (i.e. the selected node's ID starts with the target's ID followed by '|').
+  // Returns the start color for the current color theme — used for active link color.
+  function getActiveColor(cfg) {
+    const theme = COLOR_THEMES[cfg.colorTheme] || COLOR_THEMES.blue;
+    return cfg.colorTheme === 'custom'
+      ? (cfg.customColorStart || '#5b8dee')
+      : theme.start;
+  }
+
+  // Returns the stroke color for a link.
+  //
+  // When a filter selection is active: only the selected node's ancestor path is
+  // colored; everything else is grey (existing behavior).
+  //
+  // When nothing is selected: the expansion path (drilled, non-collapsed chain
+  // from root to the deepest open level) is colored with the theme's active color.
+  // A link is on the expansion path when its target is not collapsed AND has no
+  // drilled+expanded sibling (meaning it IS the currently-open branch, not a
+  // grey/collapsed sibling). Negative nodes on any active path use the negative color.
   function resolveLinkColor(link, sel, cfg) {
+    const tdata = link.target.data;
+    const negColor      = cfg.linkColorNegative || '#f472b6';
+    const inactiveColor = cfg.linkColorInactive  || '#cbd5e1';
+    const activeColor   = getActiveColor(cfg);
+
     if (sel) {
-      const tid = link.target.data.id;
-      const isActive = sel.id === tid || sel.id.startsWith(tid + '|');
-      if (isActive) {
-        return link.target.data.value < 0
-          ? cfg.linkColorNegative || '#f472b6'
-          : cfg.linkColorActive   || '#5b8dee';
-      }
+      // Selection active — use selection-path logic
+      const tid = tdata.id;
+      const isOnSelPath = sel.id === tid || sel.id.startsWith(tid + '|');
+      if (!isOnSelPath) return inactiveColor;
+      return tdata.value < 0 ? negColor : activeColor;
     }
-    return cfg.linkColorInactive || '#cbd5e1';
+
+    // No selection — color the expansion path
+    if (tdata._collapsed) return inactiveColor;
+
+    // A link is on the expansion path when its target has no drilled+expanded sibling.
+    // (In one-at-a-time mode, at most one sibling is drilled+expanded; the others are
+    // either collapsed or undrilled. Only the open branch and its children are active.)
+    const dSiblings = link.target.parent?.children || [];
+    const hasDrilledExpandedSibling = dSiblings.some(
+      s => s !== link.target && s.data.children?.length && !s.data._collapsed
+    );
+    const targetIsDrilledExpanded = !!(tdata.children?.length && !tdata._collapsed);
+    const isOnExpPath = !hasDrilledExpandedSibling || targetIsDrilledExpanded;
+
+    if (!isOnExpPath) return inactiveColor;
+    return tdata.value < 0 ? negColor : activeColor;
   }
 
   // Build a link generator that respects cfg.linkStyle: 'step' | 'curved' | 'straight'

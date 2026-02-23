@@ -274,14 +274,6 @@
       <h3 class="section-title">Connectors</h3>
 
       <label class="color-picker-label" style="margin-bottom: var(--space-3)">
-        <span class="field-label" style="margin-bottom:0">Active path color</span>
-        <div class="color-pick-row">
-          <input type="color" bind:value={draft.linkColorActive} class="color-input" />
-          <span class="color-hex">{draft.linkColorActive}</span>
-        </div>
-      </label>
-
-      <label class="color-picker-label" style="margin-bottom: var(--space-3)">
         <span class="field-label" style="margin-bottom:0">Inactive color</span>
         <div class="color-pick-row">
           <input type="color" bind:value={draft.linkColorInactive} class="color-input" />
