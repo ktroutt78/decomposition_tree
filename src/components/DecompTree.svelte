@@ -1432,7 +1432,7 @@
     position: absolute;
     top: calc(100% + 8px);
     right: 0;
-    width: 420px;
+    width: 460px;
     background: var(--color-surface, #fff);
     border: 1px solid var(--color-border, #e2e8f0);
     border-radius: 10px;
