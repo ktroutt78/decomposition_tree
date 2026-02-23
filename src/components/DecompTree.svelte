@@ -21,6 +21,8 @@
   let tooltipY = 0;
   let tooltipData = null;
 
+  let helpOpen = false;
+
   let mainGroup;
   let zoomBehavior;
 
@@ -107,6 +109,7 @@
 
     // Clicking the SVG background deselects the current node and clears mark selection
     svgSel.on('click', async () => {
+      helpOpen = false;
       const info = get(selectedNodeInfo);
       if (info) {
         selectedNodeInfo.set(null);
@@ -930,6 +933,10 @@
   // Automatically disappears when the root is expanded and reappears on collapse/reload.
   $: showDrillHint = !!$treeRoot && !$treeRoot.children?.length;
 
+  function handleWindowKeydown(e) {
+    if (e.key === 'Escape' && helpOpen) helpOpen = false;
+  }
+
   function handleDrillSelect(dimName, sortOrder = 'desc') {
     if (!$pendingDrillNode) return;
     const pendingNode = $pendingDrillNode;
@@ -950,6 +957,8 @@
     statusMessage.set(`Drilled into: ${dimName}`);
   }
 </script>
+
+<svelte:window on:keydown={handleWindowKeydown} />
 
 <div
   class="tree-container"
@@ -987,6 +996,102 @@
       </svg>
       <span>to drill into an attribute</span>
     </div>
+  {/if}
+
+  <!-- Help button + panel — upper right corner -->
+  <div class="help-widget">
+    <button
+      class="help-btn"
+      class:help-btn-open={helpOpen}
+      on:click|stopPropagation={() => helpOpen = !helpOpen}
+      title={helpOpen ? 'Close help' : 'How to use this visualization'}
+      aria-label="Help"
+      aria-expanded={helpOpen}
+      aria-haspopup="true"
+    >?</button>
+
+    {#if helpOpen}
+      <div class="help-panel" role="dialog" aria-label="How to use this visualization">
+
+        <h4 class="help-section-title">Exploring the tree</h4>
+        <ul class="help-list">
+          <li>
+            <span class="help-chip">
+              <svg width="14" height="14" viewBox="0 0 20 20">
+                <circle cx="10" cy="10" r="10" fill="#5b8dee"/>
+                <text x="10" y="15" text-anchor="middle" fill="white" font-size="16" font-weight="700" font-family="system-ui">+</text>
+              </svg>
+            </span>
+            Click <strong>+</strong> to drill into a dimension; <strong>−</strong> to collapse
+          </li>
+          <li>
+            <span class="help-chip help-chip--bar"></span>
+            Click a <strong>bar</strong> to select — filters other sheets on the dashboard
+          </li>
+          <li>
+            <span class="help-chip help-chip--header">▸</span>
+            Click a <strong>column header</strong> to toggle sort order
+          </li>
+        </ul>
+
+        <h4 class="help-section-title" style="margin-top:12px">Zoom panel (bottom right)</h4>
+        <ul class="help-list">
+          <li>
+            <span class="help-chip">
+              <svg width="13" height="13" viewBox="0 0 14 14" fill="none">
+                <circle cx="6" cy="6" r="5" stroke="currentColor" stroke-width="1.4"/>
+                <path d="M6 3.5v5M3.5 6h5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
+                <path d="M10 10l2.5 2.5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
+              </svg>
+            </span>
+            <span class="help-chip" style="margin-left:-2px">
+              <svg width="13" height="13" viewBox="0 0 14 14" fill="none">
+                <circle cx="6" cy="6" r="5" stroke="currentColor" stroke-width="1.4"/>
+                <path d="M3.5 6h5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
+                <path d="M10 10l2.5 2.5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
+              </svg>
+            </span>
+            <strong>Zoom in / out</strong>
+          </li>
+          <li>
+            <span class="help-chip">
+              <svg width="13" height="13" viewBox="0 0 14 14" fill="none">
+                <path d="M1 4V1h3M10 1h3v3M13 10v3h-3M4 13H1v-3" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </span>
+            <strong>Fit to view</strong> — reset zoom to show all nodes
+          </li>
+          <li>
+            <span class="help-chip">
+              <svg width="13" height="13" viewBox="0 0 14 14" fill="none">
+                <circle cx="7" cy="7" r="2.5" stroke="currentColor" stroke-width="1.4"/>
+                <path d="M7 1v2.5M7 8.5v4.5M1 7h2.5M8.5 7h4.5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
+              </svg>
+            </span>
+            <strong>Smart zoom</strong> — auto-zooms to each new drill level; click to toggle on/off
+          </li>
+          <li>
+            <span class="help-chip">
+              <svg width="13" height="13" viewBox="0 0 14 14" fill="none">
+                <path d="M7 10.5V3.5M3.5 6.5L7 3l3.5 3.5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </span>
+            <span class="help-chip" style="margin-left:-2px">
+              <svg width="13" height="13" viewBox="0 0 14 14" fill="none">
+                <path d="M7 3.5v7M3.5 7.5L7 11l3.5-3.5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </span>
+            <strong>Max children ↑/↓</strong> — show more or fewer groups per level
+          </li>
+        </ul>
+
+      </div>
+    {/if}
+  </div>
+
+  {#if helpOpen}
+    <!-- svelte-ignore a11y-click-events-have-key-events a11y-no-static-element-interactions -->
+    <div class="help-backdrop" on:click={() => helpOpen = false}></div>
   {/if}
 
   <!-- Zoom controls -->
@@ -1272,6 +1377,123 @@
   @keyframes hint-pop {
     from { opacity: 0; transform: translateX(-50%) translateY(6px); }
     to   { opacity: 1; transform: translateX(-50%) translateY(0);   }
+  }
+
+  /* ── Help widget ──────────────────────────────────────────────────── */
+  .help-widget {
+    position: absolute;
+    top: 16px;
+    right: 16px;
+    z-index: 20;
+  }
+
+  .help-btn {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: var(--color-surface, #fff);
+    border: 1px solid var(--color-border, #e2e8f0);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.10);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--color-text-secondary, #64748b);
+    cursor: pointer;
+    transition: background 0.12s, color 0.12s, box-shadow 0.12s;
+    line-height: 1;
+    padding: 0;
+  }
+
+  .help-btn:hover,
+  .help-btn.help-btn-open {
+    background: var(--color-accent-subtle, #eff3ff);
+    color: var(--color-accent, #4a6cf7);
+    box-shadow: 0 2px 8px rgba(74, 108, 247, 0.18);
+  }
+
+  .help-panel {
+    position: absolute;
+    top: calc(100% + 8px);
+    right: 0;
+    width: 272px;
+    background: var(--color-surface, #fff);
+    border: 1px solid var(--color-border, #e2e8f0);
+    border-radius: 10px;
+    box-shadow: 0 6px 24px rgba(0, 0, 0, 0.13);
+    padding: 14px 16px 16px;
+    z-index: 21;
+    animation: help-in 0.2s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  @keyframes help-in {
+    from { opacity: 0; transform: translateY(-6px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  .help-section-title {
+    font-size: 10px;
+    font-weight: 700;
+    color: var(--color-text-primary, #1e293b);
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    margin-bottom: 8px;
+  }
+
+  .help-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+  }
+
+  .help-list li {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    line-height: 1.4;
+    color: var(--color-text-secondary, #64748b);
+  }
+
+  .help-list li strong {
+    color: var(--color-text-primary, #1e293b);
+    font-weight: 600;
+  }
+
+  .help-chip {
+    flex-shrink: 0;
+    width: 22px;
+    height: 22px;
+    border-radius: 5px;
+    background: var(--color-border-subtle, #f1f5f9);
+    border: 1px solid var(--color-border, #e2e8f0);
+    color: var(--color-text-secondary, #64748b);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+    font-weight: 600;
+  }
+
+  .help-chip--bar {
+    background: linear-gradient(90deg, #5b8dee 52%, #e2e8f0 52%);
+    border-color: #c7d7f9;
+  }
+
+  .help-chip--header {
+    background: white;
+    color: #334155;
+    font-size: 10px;
+  }
+
+  .help-backdrop {
+    position: absolute;
+    inset: 0;
+    z-index: 19;
   }
 
 </style>

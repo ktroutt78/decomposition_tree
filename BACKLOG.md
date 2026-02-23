@@ -65,6 +65,7 @@ Enhancement IDs use the format **EBL-XXX**. Reference the ID when requesting an 
 | EBL-010 | Tooltip fixes — title now wraps instead of truncating; hint text updated to reference actual +/− buttons ("Click + to drill into an attribute", etc.); row label and body text darkened to primary color |
 | EBL-011 | Smart zoom on drill — after each new drill, D3 zoom animates to frame only the drilled parent + its new children; full-tree fit-to-view button still available; Settings toggle (on by default) to revert to fit-all behavior |
 | EBL-008 | Preserve deep expansion pattern when switching siblings — clicking an un-drilled sibling now replays the full multi-level drill path from the expanded sibling using `reapplyExpansion`, restoring all nested dimensions and collapse states |
+| EBL-012 | In-viz help overlay — `?` button in the upper-right corner opens an animated popover explaining all controls (drill/collapse, bar select, column header sort, zoom in/out, fit to view, smart zoom, max children); dismisses on outside click or Escape |
 
 ### v2.1 — Interaction & layout refinements
 
