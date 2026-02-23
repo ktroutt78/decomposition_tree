@@ -267,19 +267,6 @@
         </div>
       </div>
 
-      <label class="toggle-row">
-        <span class="toggle-label">Smart zoom on drill</span>
-        <button
-          class="toggle-btn"
-          class:on={draft.smartZoom}
-          on:click={() => draft.smartZoom = !draft.smartZoom}
-          role="switch"
-          aria-label="Smart zoom on drill"
-          aria-checked={draft.smartZoom}
-        >
-          <span class="toggle-thumb"></span>
-        </button>
-      </label>
     </section>
 
     <!-- ── Connectors ───────────────────────────────────── -->

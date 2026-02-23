@@ -4,7 +4,7 @@
   import * as d3 from 'd3';
   import { treeRoot, pendingDrillNode, statusMessage, selectedNodeInfo } from '../stores/treeState.js';
   import { selectMarksForFilter, clearMarkSelection } from '../lib/tableau.js';
-  import { config } from '../stores/config.js';
+  import { config, saveConfig } from '../stores/config.js';
   import { encodingMap } from '../stores/encodings.js';
   import { drillDown, toggleCollapse, updateNodeInTree, findParent, toggleSortAtDimension } from '../lib/treeEngine.js';
   import { formatValue, truncate } from '../lib/formatters.js';
@@ -795,6 +795,11 @@
     if (root) doFitToView(root, cfg);
   }
 
+  async function toggleSmartZoom() {
+    const current = get(config);
+    await saveConfig({ ...current, smartZoom: !current.smartZoom });
+  }
+
   function handleSortToggle(dim) {
     const cfg = get(config);
     treeRoot.update(root =>
@@ -886,6 +891,20 @@
         <path d="M10 10l2.5 2.5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
       </svg>
     </button>
+    <button
+      class="zoom-btn zoom-btn-smart"
+      class:smart-on={$config.smartZoom}
+      on:click={toggleSmartZoom}
+      title={$config.smartZoom ? 'Smart zoom: on' : 'Smart zoom: off'}
+      aria-label="Toggle smart zoom"
+      aria-pressed={$config.smartZoom}
+    >
+      <!-- Crosshair / focus icon -->
+      <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+        <circle cx="7" cy="7" r="2.5" stroke="currentColor" stroke-width="1.4"/>
+        <path d="M7 1v2.5M7 8.5v4.5M1 7h2.5M8.5 7h4.5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
+      </svg>
+    </button>
   </div>
 
   {#if tooltipVisible && tooltipData}
@@ -952,6 +971,16 @@
     border-top: 1px solid var(--color-border-subtle, #f1f5f9);
     border-bottom: 1px solid var(--color-border-subtle, #f1f5f9);
     border-radius: 0;
+  }
+
+  .zoom-btn-smart {
+    border-top: 1px solid var(--color-border-subtle, #f1f5f9);
+    border-radius: 0 0 5px 5px;
+  }
+
+  .zoom-btn-smart.smart-on {
+    color: var(--color-accent, #4a6cf7);
+    background: var(--color-accent-subtle, #eff3ff);
   }
 
   /* Column headers — HTML overlay; position/transform set inline per orientation */
