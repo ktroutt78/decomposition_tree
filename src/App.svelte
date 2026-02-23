@@ -30,8 +30,12 @@
     // measure loads or changes. A saved alias may be stale (from a different measure),
     // so we always reset it to match the current field.
     if (measureChanged && newValueName) {
-      const stripped = newValueName.replace(/^[A-Z_]+\((.+)\)$/, '$1');
-      config.update(c => ({ ...c, measureAlias: stripped !== newValueName ? stripped : '' }));
+      const isInitialLoad = _prevValueName === null;
+      const savedAlias = get(config).measureAlias?.trim();
+      if (!isInitialLoad || !savedAlias) {
+        const stripped = newValueName.replace(/^[A-Z_]+\((.+)\)$/, '$1');
+        config.update(c => ({ ...c, measureAlias: stripped !== newValueName ? stripped : '' }));
+      }
     }
 
     _prevValueName = newValueName;
