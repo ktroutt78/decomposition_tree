@@ -12,7 +12,6 @@ Enhancement IDs use the format **EBL-XXX**. Reference the ID when requesting an 
 |---|---|---|---|
 | EBL-003 | **XL** | **View underlying data from tooltip** | Add a button inside the tooltip to open a detail drawer showing all rows that make up the selected node — displaying dimension attributes from the Marks card. Requires a new modal/table component, row pagination for large datasets, and formatting logic. |
 | EBL-008 | **L** | **Preserve deep expansion pattern when switching level-1 siblings** | When a multi-level drill is open (e.g. Cip6 Name → Soc 2 Name Year 1 → Is High Demand) and the user clicks a different level-1 sibling, the full expansion pattern should be replayed on the new branch — not just the first level. Requires extracting a drill-path template from the active branch then recursively applying it to the new branch. |
-| EBL-011 | **M** | **Smart zoom on drill — focus on drilled node and its new children** | When a user drills into a node, zoom to frame only the drilled node (parent) and its newly revealed children instead of fitting the entire tree. The fit-to-view button remains available for full-tree view. Requires computing the bounding box of the active parent + children after each drill, animating the D3 zoom to that frame, and a Settings toggle (on by default) to revert to fit-all behavior. Triggers on drill-down only — not on collapse, filter changes, or re-expansion. |
 
 ---
 
@@ -65,6 +64,7 @@ Enhancement IDs use the format **EBL-XXX**. Reference the ID when requesting an 
 | EBL-006 | Bar scale mode — three-way control in Layout settings: Parent (default, relative to parent value), Top Node (relative to root total), Level Max (relative to largest value at same depth) |
 | EBL-007 | Column header formatting — font size and color controls for dimension column headers ("▸ by Region") in Settings under a dedicated Column Headers section |
 | EBL-010 | Tooltip fixes — title now wraps instead of truncating; hint text updated to reference actual +/− buttons ("Click + to drill into an attribute", etc.); row label and body text darkened to primary color |
+| EBL-011 | Smart zoom on drill — after each new drill, D3 zoom animates to frame only the drilled parent + its new children; full-tree fit-to-view button still available; Settings toggle (on by default) to revert to fit-all behavior |
 
 ### v2.1 — Interaction & layout refinements
 

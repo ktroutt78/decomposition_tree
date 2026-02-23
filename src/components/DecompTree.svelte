@@ -47,6 +47,10 @@
   // Stable defaults used for doFitToView when called outside renderTree
   let _lastNodeH = 70;
 
+  // Set to the ID of the node that was just drilled into so doFitToView can
+  // smart-zoom to that parent + its new children. Reset to null after consuming.
+  let _lastDrilledNodeId = null;
+
   // HTML column headers (driven from D3 layout, updated each render)
   let colHeaders = []; // [{ dimName, dataX }]
 
@@ -606,9 +610,23 @@
     )(hier);
     if (cfg.initialAlignment === 'top-left' && isLR) topAlignHier(hier, isLR);
 
-    const nodes = hier.descendants();
-    const xs = nodes.map(n => isLR ? n.y : n.x);
-    const ys = nodes.map(n => isLR ? n.x : n.y);
+    const allNodes = hier.descendants();
+
+    // Smart zoom: when a drill just happened, restrict the bounding box to the
+    // drilled parent + its new children so the new level is framed in the viewport.
+    let focusNodes = allNodes;
+    let usedSmartZoom = false;
+    if (cfg.smartZoom && _lastDrilledNodeId) {
+      const drilled = allNodes.find(n => n.data.id === _lastDrilledNodeId);
+      if (drilled?.children?.length) {
+        focusNodes = [drilled, ...drilled.children];
+        usedSmartZoom = true;
+      }
+      _lastDrilledNodeId = null; // consume regardless — avoids stale state
+    }
+
+    const xs = focusNodes.map(n => isLR ? n.y : n.x);
+    const ys = focusNodes.map(n => isLR ? n.x : n.y);
     const x0 = Math.min(...xs) - nw / 2 - 50;
     const y0 = Math.min(...ys) - nh / 2 - 50;
     const x1 = Math.max(...xs) + nw / 2 + 50;
@@ -618,9 +636,13 @@
 
     const w = containerWidth  || 800;
     const h = containerHeight || 600;
-    const scale = Math.min(0.92, Math.min(w / tw, h / th));
+    // Cap at 1.2 for focused drills to prevent over-zooming on a small set of nodes
+    const maxScale = usedSmartZoom ? 1.2 : 0.92;
+    const scale = Math.min(maxScale, Math.min(w / tw, h / th));
+
+    // Smart zoom always centers the focused region; full fit respects alignment setting
     let tx, ty;
-    if (cfg.initialAlignment === 'top-left' && isLR) {
+    if (!usedSmartZoom && cfg.initialAlignment === 'top-left' && isLR) {
       tx = 40 - x0 * scale;
       ty = 40 - y0 * scale;
     } else {
@@ -690,6 +712,7 @@
         const siblingSort = drilledSibling?.children?.[0]?._sortOrder || 'desc';
         const cfg = get(config);
         const updated = drillDown(node, siblingDim, get(encodingMap), cfg.maxChildrenShown, cfg.excludeNulls, siblingSort);
+        _lastDrilledNodeId = node.id; // signal doFitToView to smart-zoom this node
         treeRoot.update(root => {
           let r = updateNodeInTree(root, node.id, () => updated);
           for (const sib of siblings) {
@@ -777,6 +800,7 @@
     if (!$pendingDrillNode) return;
     const pendingNode = $pendingDrillNode;
     const updated = drillDown(pendingNode, dimName, $encodingMap, $config.maxChildrenShown, $config.excludeNulls, sortOrder);
+    _lastDrilledNodeId = pendingNode.id; // signal doFitToView to smart-zoom this node
     treeRoot.update(root => {
       const parent = findParent(root, pendingNode.id);
       const siblings = parent?.children || [];

@@ -31,6 +31,7 @@ export const defaultConfig = {
   subheadingColor: '#64748b',
   showMeasureName: true,
   labelMode: 'both',
+  smartZoom: true,
   barScaleMode: 'parent',
   linkColorActive: '#5b8dee',
   linkColorInactive: '#cbd5e1',
