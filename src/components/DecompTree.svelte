@@ -1080,7 +1080,7 @@
                 <path d="M7 1v2.5M7 8.5v4.5M1 7h2.5M8.5 7h4.5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
               </svg>
             </span>
-            <strong>Smart zoom</strong> — auto-zooms to each new drill level; click to toggle on/off
+            <strong>Smart zoom</strong> — auto-zooms to each new drill level; toggles on/off
           </li>
           <li>
             <span class="help-chip">
@@ -1432,7 +1432,7 @@
     position: absolute;
     top: calc(100% + 8px);
     right: 0;
-    width: 360px;
+    width: 420px;
     background: var(--color-surface, #fff);
     border: 1px solid var(--color-border, #e2e8f0);
     border-radius: 10px;
