@@ -545,9 +545,13 @@
     const activeColor   = getActiveColor(cfg);
 
     if (sel) {
-      // Selection active — use selection-path logic
+      // Selection active — color the full path: root → selected node → deepest expansion.
+      // sel.id.startsWith(tid + '|') : target is an ancestor of the selected node
+      // tid.startsWith(sel.id + '|') : target is a descendant of the selected node
       const tid = tdata.id;
-      const isOnSelPath = sel.id === tid || sel.id.startsWith(tid + '|');
+      const isOnSelPath = sel.id === tid
+        || sel.id.startsWith(tid + '|')
+        || tid.startsWith(sel.id + '|');
       if (!isOnSelPath) return inactiveColor;
       return tdata.value < 0 ? negColor : activeColor;
     }
