@@ -97,6 +97,13 @@ export function drillDown(node, dimensionName, encMap, maxChildren = 20, exclude
   const sorted = Array.from(groups.values())
     .sort((a, b) => sortOrder === 'asc' ? a.value - b.value : b.value - a.value);
 
+  // When nulls are excluded, use the non-null total as the denominator for
+  // percentOfParent so the visible children's percentages sum to ~100% and
+  // bar fills reflect proportions among the remaining values.
+  const effectiveParent = excludeNulls
+    ? sorted.reduce((sum, g) => sum + g.value, 0)
+    : node.value;
+
   const shown  = sorted.slice(0, maxChildren);
   const hidden = sorted.slice(maxChildren);
 
@@ -106,7 +113,7 @@ export function drillDown(node, dimensionName, encMap, maxChildren = 20, exclude
       label: group.label,
       value: group.value,
       count: group.count,
-      percentOfParent: node.value !== 0 ? (group.value / Math.abs(node.value)) * 100 : 0,
+      percentOfParent: effectiveParent !== 0 ? (group.value / Math.abs(effectiveParent)) * 100 : 0,
       depth: node.depth + 1,
       dimensionPath: [...node.dimensionPath, { field: dimensionName, value: group.label }],
       children: null,
