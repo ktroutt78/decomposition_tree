@@ -2,6 +2,15 @@
  * Pure data logic for the decomposition tree — no Tableau API, D3, or Svelte.
  */
 
+function isNullLike(val) {
+  if (val === null || val === undefined || val === '') return true;
+  if (typeof val === 'string') {
+    const lower = val.toLowerCase().trim();
+    return lower === 'null' || lower === '(null)' || lower === '%null%';
+  }
+  return false;
+}
+
 // Returns the value from a row for a given field, trying name then fieldName
 function getFieldValue(row, field) {
   let dv = row[field.name];
@@ -62,11 +71,11 @@ export function drillDown(node, dimensionName, encMap, maxChildren = 20, exclude
     if (dimDv === undefined || dimDv === null) continue;
 
     const rawVal = typeof dimDv === 'object' ? dimDv.value : dimDv;
-    if (excludeNulls && (rawVal === null || rawVal === undefined || rawVal === '')) continue;
+    if (excludeNulls && isNullLike(rawVal)) continue;
 
     const fmtVal = typeof dimDv === 'object' ? (dimDv.formattedValue ?? rawVal) : rawVal;
     const key = String(fmtVal ?? '(null)');
-    if (excludeNulls && (key === 'null' || key === '(null)' || key === '')) continue;
+    if (excludeNulls && isNullLike(key)) continue;
 
     if (!groups.has(key)) {
       groups.set(key, { label: key, rows: [], value: 0, count: 0 });
