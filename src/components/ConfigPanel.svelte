@@ -644,7 +644,7 @@
   .section-title {
     font-size: var(--text-sm);
     font-weight: var(--font-semibold);
-    color: var(--color-text-muted);
+    color: var(--color-text-primary);
     text-transform: uppercase;
     letter-spacing: 0.07em;
     margin-bottom: var(--space-3);

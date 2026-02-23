@@ -4,7 +4,7 @@ export const defaultConfig = {
   orientation: 'LR',
   nodeWidth: 200,
   nodeHeight: 86,
-  levelSpacing: 280,
+  levelSpacing: 160,
   siblingSpacing: 20,
   maxChildrenShown: 5,
   cornerRadius: 10,
