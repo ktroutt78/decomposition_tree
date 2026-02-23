@@ -158,7 +158,7 @@
 
   .tooltip-key {
     font-size: var(--text-sm);
-    color: var(--color-text-secondary);
+    color: var(--color-text-primary);
     white-space: nowrap;
   }
 
@@ -171,7 +171,7 @@
 
   .tooltip-body {
     font-size: var(--text-sm);
-    color: var(--color-text-secondary);
+    color: var(--color-text-primary);
     line-height: 1.6;
     white-space: pre-wrap;
     padding: var(--space-1) 0;
@@ -182,7 +182,6 @@
     padding-top: var(--space-2);
     border-top: 1px solid var(--color-border-subtle);
     font-size: var(--text-xs);
-    color: var(--color-text-muted);
-    font-style: italic;
+    color: var(--color-text-primary);
   }
 </style>
