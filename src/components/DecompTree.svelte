@@ -66,6 +66,8 @@
   // Current D3 zoom transform — tracked to position column headers correctly
   let currentZoom = { x: 0, y: 0, k: 1 };
 
+  let treeBounds = null; // layout-space bounding box of all visible nodes
+
   // ── Top-left layout helpers ────────────────────────────────────────────────
   // Shift an entire subtree's vertical axis (x in LR, y in TB) by delta.
   function shiftVertical(node, delta, isLR) {
@@ -296,6 +298,19 @@
     const posX  = isLR ? d => d.y : d => d.x;
     const posY  = isLR ? d => d.x : d => d.y;
     const xform = d => `translate(${posX(d)},${posY(d)})`;
+
+    // Track full tree bounds for scrollbar computation
+    if (nodes.length) {
+      const allX = nodes.map(d => posX(d));
+      const allY = nodes.map(d => posY(d));
+      const nodeH = isLR ? nh : TB_NH;
+      treeBounds = {
+        x0: Math.min(...allX) - nw / 2 - 50,
+        x1: Math.max(...allX) + nw / 2 + 50,
+        y0: Math.min(...allY) - nodeH / 2 - 50,
+        y1: Math.max(...allY) + nodeH / 2 + 50,
+      };
+    }
 
     // Named transitions prevent cross-interruption
     const tLayout = d3.transition('layout').duration(dur).ease(d3.easeCubicOut);
@@ -685,7 +700,8 @@
     const h = containerHeight || 600;
     // Cap at 1.2 for focused drills to prevent over-zooming on a small set of nodes
     const maxScale = usedSmartZoom ? 1.2 : 0.92;
-    const scale = Math.min(maxScale, Math.min(w / tw, h / th));
+    const MIN_READABLE_SCALE = 0.4;
+    const scale = Math.max(MIN_READABLE_SCALE, Math.min(maxScale, Math.min(w / tw, h / th)));
 
     // Smart zoom always centers the focused region; full fit respects alignment setting
     let tx, ty;
@@ -933,6 +949,68 @@
   // Automatically disappears when the root is expanded and reappears on collapse/reload.
   $: showDrillHint = !!$treeRoot && !$treeRoot.children?.length;
 
+  const SCROLLBAR_SIZE = 10;
+
+  $: hContentWidth  = treeBounds ? (treeBounds.x1 - treeBounds.x0) * currentZoom.k : 0;
+  $: vContentHeight = treeBounds ? (treeBounds.y1 - treeBounds.y0) * currentZoom.k : 0;
+  $: showHScroll = hContentWidth  > containerWidth  + 2;
+  $: showVScroll = vContentHeight > containerHeight + 2;
+
+  // Horizontal thumb
+  $: hScrollRange = Math.max(1, hContentWidth - containerWidth);
+  $: hScrollLeft  = treeBounds
+      ? Math.max(0, Math.min(hScrollRange, -(treeBounds.x0 * currentZoom.k + currentZoom.x)))
+      : 0;
+  $: hThumbWidth  = Math.max(30, containerWidth  * (containerWidth  / hContentWidth));
+  $: hThumbLeft   = (containerWidth  - hThumbWidth)  * (hScrollLeft  / hScrollRange);
+
+  // Vertical thumb
+  $: vScrollRange = Math.max(1, vContentHeight - containerHeight);
+  $: vScrollTop   = treeBounds
+      ? Math.max(0, Math.min(vScrollRange, -(treeBounds.y0 * currentZoom.k + currentZoom.y)))
+      : 0;
+  $: vThumbHeight = Math.max(30, containerHeight * (containerHeight / vContentHeight));
+  $: vThumbTop    = (containerHeight - vThumbHeight) * (vScrollTop  / vScrollRange);
+
+  let _sbDragging = null; // 'h' | 'v' | null
+  let _sbDragStart = { client: 0, scrollPos: 0 };
+
+  function onSbMousedown(axis, e) {
+    e.stopPropagation();
+    e.preventDefault();
+    _sbDragging = axis;
+    _sbDragStart = {
+      client: axis === 'h' ? e.clientX : e.clientY,
+      scrollPos: axis === 'h' ? hScrollLeft : vScrollTop,
+    };
+  }
+
+  function onWindowMousemove(e) {
+    if (!_sbDragging || !treeBounds) return;
+    const k = currentZoom.k;
+    if (_sbDragging === 'h') {
+      const dx        = e.clientX - _sbDragStart.client;
+      const trackW    = containerWidth - hThumbWidth;
+      const newScroll = Math.max(0, Math.min(hScrollRange,
+                          _sbDragStart.scrollPos + dx * (hScrollRange / Math.max(1, trackW))));
+      const newTx = -treeBounds.x0 * k - newScroll;
+      zoomBehavior.transform(d3.select(svgEl),
+        d3.zoomIdentity.translate(newTx, currentZoom.y).scale(k));
+    } else {
+      const dy        = e.clientY - _sbDragStart.client;
+      const trackH    = containerHeight - vThumbHeight;
+      const newScroll = Math.max(0, Math.min(vScrollRange,
+                          _sbDragStart.scrollPos + dy * (vScrollRange / Math.max(1, trackH))));
+      const newTy = -treeBounds.y0 * k - newScroll;
+      zoomBehavior.transform(d3.select(svgEl),
+        d3.zoomIdentity.translate(currentZoom.x, newTy).scale(k));
+    }
+  }
+
+  function onWindowMouseup() {
+    _sbDragging = null;
+  }
+
   function handleWindowKeydown(e) {
     if (e.key === 'Escape' && helpOpen) helpOpen = false;
   }
@@ -958,7 +1036,11 @@
   }
 </script>
 
-<svelte:window on:keydown={handleWindowKeydown} />
+<svelte:window
+  on:keydown={handleWindowKeydown}
+  on:mousemove={onWindowMousemove}
+  on:mouseup={onWindowMouseup}
+/>
 
 <div
   class="tree-container"
@@ -1178,6 +1260,30 @@
 
   {#if tooltipVisible && tooltipData}
     <Tooltip x={tooltipX} y={tooltipY} data={tooltipData} />
+  {/if}
+
+  {#if showHScroll}
+    <div class="sb-track sb-h" style="right:{showVScroll ? SCROLLBAR_SIZE : 0}px">
+      <!-- svelte-ignore a11y-no-static-element-interactions -->
+      <div
+        class="sb-thumb"
+        class:sb-thumb-active={_sbDragging === 'h'}
+        style="width:{hThumbWidth}px; left:{hThumbLeft}px"
+        on:mousedown={e => onSbMousedown('h', e)}
+      ></div>
+    </div>
+  {/if}
+
+  {#if showVScroll}
+    <div class="sb-track sb-v" style="bottom:{showHScroll ? SCROLLBAR_SIZE : 0}px">
+      <!-- svelte-ignore a11y-no-static-element-interactions -->
+      <div
+        class="sb-thumb"
+        class:sb-thumb-active={_sbDragging === 'v'}
+        style="height:{vThumbHeight}px; top:{vThumbTop}px"
+        on:mousedown={e => onSbMousedown('v', e)}
+      ></div>
+    </div>
   {/if}
 </div>
 
@@ -1510,5 +1616,37 @@
     inset: 0;
     z-index: 19;
   }
+
+  /* ── Scrollbars ───────────────────────────────────────────────── */
+  .sb-track {
+    position: absolute;
+    background: rgba(0, 0, 0, 0.04);
+    border-radius: 5px;
+    z-index: 5;
+  }
+  .sb-h {
+    bottom: 0;
+    left: 0;
+    height: 10px;
+  }
+  .sb-v {
+    right: 0;
+    top: 0;
+    width: 10px;
+  }
+  .sb-thumb {
+    position: absolute;
+    background: rgba(100, 116, 139, 0.35);
+    border-radius: 5px;
+    cursor: grab;
+    transition: background 0.15s;
+  }
+  .sb-thumb:hover,
+  .sb-thumb-active {
+    background: rgba(100, 116, 139, 0.6);
+    cursor: grabbing;
+  }
+  .sb-h .sb-thumb { top: 1px; bottom: 1px; }
+  .sb-v .sb-thumb { left: 1px; right: 1px; }
 
 </style>
