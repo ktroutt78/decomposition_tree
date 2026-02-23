@@ -51,6 +51,14 @@ An interactive hierarchical decomposition tree built with Svelte and D3. Drop a 
 - When a drilled node has more members than **Max Children**, the top N are shown and the remaining members are grouped into a single **(Other)** child
 - Drilling into **(Other)** is supported
 
+### Zoom Controls (bottom-right panel)
+- **Zoom in / Zoom out:** Magnify or shrink the tree
+- **Fit to view** (corners icon): Reset zoom so all visible nodes fit the viewport
+- **Smart zoom** (crosshair icon): When on, auto-zooms to the most recently drilled level after each expansion; when off, the view stays where it is. Toggling from off to on immediately zooms to the current drill level
+- **More / Fewer children** (↑ / ↓ arrows): Increase or decrease the max children shown per node by 1. The current value is shown between the arrows
+
+When the tree content extends beyond the viewport at the current zoom level, thin scrollbars appear at the bottom and right edges. Drag a scrollbar thumb to pan — or use the trackpad or mouse directly. Scrollbars disappear automatically when all nodes fit within the viewport.
+
 ### Toolbar
 - **Reload** (↺): Fetches fresh data from Tableau and resets the tree to its initial state
 - **Settings** (⚙): Opens the configuration panel
@@ -61,58 +69,72 @@ An interactive hierarchical decomposition tree built with Svelte and D3. Drop a 
 
 Open the settings panel with the ⚙ gear icon in the top-right corner. Settings are saved per-workbook inside Tableau's extension settings store.
 
-### Layout
-| Setting | Description | Default |
-|---|---|---|
-| Orientation | **Left→Right:** horizontal bars in a left-to-right tree. **Top→Bottom:** vertical column bars — each bar grows upward; labels sit to the right of the bar; children expand downward | Left→Right |
-| Initial alignment | Where the root node is positioned on first render | Top |
-| Node width | Width allocated per node slot (px) | 200 |
-| Level spacing | Gap between depth levels (px) | 280 |
-| Sibling spacing | Gap between sibling nodes (px) | 20 |
-| Bar height | Bar thickness in LR mode; maximum bar column height in TB mode (px) | 20 |
-| Node corner radius | Roundness of the node card corners (0–24) | 10 |
-| Bar corner radius | Roundness of the filled bar ends (0–24) | 4 |
-| Max children shown | Maximum named children per drill; excess grouped into (Other) | 10 |
-
 ### Color Theme
 | Setting | Description | Default |
 |---|---|---|
-| Theme | Preset color palettes (Ocean, Forest, Amethyst, Sunset, Teal, Custom) | Ocean |
+| Theme | Preset color palettes: Ocean, Forest, Amethyst, Sunset, Teal, Custom | Ocean |
 | Custom start / end | Start and end colors when Theme is set to Custom | — |
 | Apply gradient to bars | When on, bar colors are distributed across the theme gradient based on value rank. When off, all positive bars share a single solid color | On |
 | Negative value color | Fill color for bars with a negative value | Pink |
-| Background color | Visualization area background | White |
 
 **Gradient color behavior:**
 - **Preset themes** — the largest value bar gets the darkest shade; bars graduate to the lightest shade as values decrease
 - **Custom gradient** — the largest value bar gets the first color chosen; the smallest gets the second color chosen
 - When the gradient toggle is off, all positive bars render in the primary theme color regardless of value rank
 
+### Layout
+| Setting | Description | Default |
+|---|---|---|
+| Orientation | **Left→Right:** horizontal bars expanding left to right. **Top→Bottom:** vertical column bars — each bar grows upward; labels sit to the right; children expand downward | Left→Right |
+| Alignment | (Left→Right only) **Top:** root anchored at the top-left. **Centered:** root centered vertically | Top |
+| Link style | **Curved**, **Step**, or **Straight** connectors between nodes | Curved |
+| Level spacing | Gap between depth levels (px) | 160 |
+| Max children shown | Maximum named children per drill; excess members grouped into (Other) | 5 |
+| Node corner radius | Roundness of the node card corners (0–24) | 10 |
+| Bar corner radius | Roundness of the filled bar ends (0–24) | 4 |
+| Bar thickness | Bar height in Left→Right mode; maximum bar column height in Top→Bottom mode (px) | 20 |
+| Bar scale | How bar lengths are calculated: **Parent** (% of parent node's value), **Top Node** (% of root value), **Level Max** (% of the largest value at the same depth) | Parent |
+
+### Connectors
+| Setting | Description | Default |
+|---|---|---|
+| Inactive color | Stroke color for links not on the active selection or expansion path | Gray |
+| Negative node color | Stroke color for links leading to nodes with a negative value | Pink |
+| Opacity | Overall link opacity | 90% |
+
 ### Display
 | Setting | Description | Default |
 |---|---|---|
-| Measure display name | Override the measure label (e.g. "Revenue" instead of "SUM(Sales)"). Auto-stripped of aggregation prefix (SUM/AVG/etc.) on load | Auto |
-| Value format | Auto (reads Tableau's native number format), Number, Currency, Percentage | Auto |
-| Currency symbol | Used when Value format is set to Currency | $ |
-| Show percentage | Show % of parent value on each node label. Percentage sign matches the sign of the child's value | On |
-| Show group count | Show how many child groups a drilled node has (e.g. "4 groups") | On |
-| Exclude nulls | Hide null/empty dimension members when drilling | Off |
+| Background color | Visualization area background color | White |
+| Show group count | Show how many child groups a drilled node has (e.g. "• 4 groups") | On |
+| Exclude null values | Hide null/empty dimension members when drilling | Off |
+| Value format | **Auto** (reads Tableau's native format), **Number** (1,234), **Currency** ($1.2K), **Percent** (12.3%) | Auto |
+| Currency symbol | Prefix used when Value format is set to Currency | $ |
+| Measure display name | Override the measure label shown on nodes (e.g. "Revenue" instead of "SUM(Sales)"). Leave blank to use the field name, auto-stripped of aggregation prefix | Auto |
 
 ### Labels
 | Setting | Description | Default |
 |---|---|---|
-| Heading font size | Font size for the node label and value (px) | 13 |
-| Heading color | Color of the heading text | Dark slate |
-| Subheading font size | Font size for the percentage and group count lines (px) | 11 |
+| Heading font size | Font size for the node label line (px) | 13 |
+| Heading color | Color of the node label text | Dark slate |
+| Subheading font size | Font size for the value / percentage line (px) | 11 |
 | Subheading color | Color of the subheading text | Muted grey |
-| Font family | System, Serif, or Monospace | System |
-| Show measure name | Prefix the value line with the measure name | On |
-| Show | Value & %, Value only, or % only | Value & % |
+| Font family | System, Serif, or Mono | System |
+| Show measure name | Prefix the value line with the measure display name | On |
+| Show | **Value & %** — show both value and % of parent. **Value only** — hide percentage. **% only** — hide value | Value & % |
+
+### Column Headers
+Column headers appear above each drilled level (Left→Right) or to the left of each row (Top→Bottom), showing the dimension name and current sort order.
+
+| Setting | Description | Default |
+|---|---|---|
+| Font size | Column header label font size (px) | 12 |
+| Color | Column header text color | Dark slate |
 
 ### Tooltip
 | Setting | Description | Default |
 |---|---|---|
-| Narrative template | Custom template shown in the hover tooltip. Replaces the default rows. Pre-filled with the default layout as a starting point — edit or clear as needed. | `<measure>: <value>` / `% of Parent: <pct>` / `Records: <count>` |
+| Narrative template | Custom template shown in the hover tooltip. Replaces the default rows. Pre-filled with the default layout as a starting point — edit or clear as needed | `<measure>: <value>` / `% of Parent: <pct>` / `Records: <count>` |
 
 **Available placeholders:**
 - `<measure>` — the measure display name (alias if set, otherwise auto-stripped field name, e.g. "Profit")
@@ -131,11 +153,10 @@ Records: <count>
 <Region> — review quarterly performance targets.
 ```
 
-### Connection
-| Setting | Description |
-|---|---|
-| Link style | Curved, Step, or Straight connectors between nodes |
-| Animation duration | Transition speed in milliseconds |
+### Animation
+| Setting | Description | Default |
+|---|---|---|
+| Transition speed | Duration of layout and fill animations (ms) | 300 |
 
 ---
 
