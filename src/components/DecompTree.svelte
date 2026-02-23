@@ -544,33 +544,36 @@
     const inactiveColor = cfg.linkColorInactive  || '#cbd5e1';
     const activeColor   = getActiveColor(cfg);
 
+    // Expansion path check — is this link on the active drill chain?
+    // Active = target is not collapsed AND has no drilled+expanded sibling.
+    // (In one-at-a-time mode, at most one sibling is expanded; the open branch
+    // and all its descendants down to the deepest level are active.)
+    function onExpansionPath() {
+      if (tdata._collapsed) return false;
+      const dSiblings = link.target.parent?.children || [];
+      const hasDrilledExpandedSibling = dSiblings.some(
+        s => s !== link.target && s.data.children?.length && !s.data._collapsed
+      );
+      const targetIsDrilledExpanded = !!(tdata.children?.length && !tdata._collapsed);
+      return !hasDrilledExpandedSibling || targetIsDrilledExpanded;
+    }
+
     if (sel) {
-      // Selection active — color the full path: root → selected node → deepest expansion.
-      // sel.id.startsWith(tid + '|') : target is an ancestor of the selected node
-      // tid.startsWith(sel.id + '|') : target is a descendant of the selected node
       const tid = tdata.id;
-      const isOnSelPath = sel.id === tid
-        || sel.id.startsWith(tid + '|')
-        || tid.startsWith(sel.id + '|');
-      if (!isOnSelPath) return inactiveColor;
-      return tdata.value < 0 ? negColor : activeColor;
+      // Target is the selected node or an ancestor of it (root → selected path)
+      if (sel.id === tid || sel.id.startsWith(tid + '|')) {
+        return tdata.value < 0 ? negColor : activeColor;
+      }
+      // Target is a descendant of the selected node — apply expansion path logic
+      // so only the drilled branch below the selection stays colored
+      if (tid.startsWith(sel.id + '|')) {
+        return onExpansionPath() ? (tdata.value < 0 ? negColor : activeColor) : inactiveColor;
+      }
+      return inactiveColor;
     }
 
     // No selection — color the expansion path
-    if (tdata._collapsed) return inactiveColor;
-
-    // A link is on the expansion path when its target has no drilled+expanded sibling.
-    // (In one-at-a-time mode, at most one sibling is drilled+expanded; the others are
-    // either collapsed or undrilled. Only the open branch and its children are active.)
-    const dSiblings = link.target.parent?.children || [];
-    const hasDrilledExpandedSibling = dSiblings.some(
-      s => s !== link.target && s.data.children?.length && !s.data._collapsed
-    );
-    const targetIsDrilledExpanded = !!(tdata.children?.length && !tdata._collapsed);
-    const isOnExpPath = !hasDrilledExpandedSibling || targetIsDrilledExpanded;
-
-    if (!isOnExpPath) return inactiveColor;
-    return tdata.value < 0 ? negColor : activeColor;
+    return onExpansionPath() ? (tdata.value < 0 ? negColor : activeColor) : inactiveColor;
   }
 
   // Build a link generator that respects cfg.linkStyle: 'step' | 'curved' | 'straight'
