@@ -967,6 +967,7 @@
 
   function handleSortToggle(dim) {
     const cfg = get(config);
+    _suppressNextFit = true;
     treeRoot.update(root =>
       toggleSortAtDimension(root, dim, $encodingMap, cfg.maxChildrenShown, cfg.excludeNulls)
     );
