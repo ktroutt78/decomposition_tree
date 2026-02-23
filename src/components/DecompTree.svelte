@@ -1417,7 +1417,7 @@
     position: absolute;
     top: calc(100% + 8px);
     right: 0;
-    width: 272px;
+    width: 320px;
     background: var(--color-surface, #fff);
     border: 1px solid var(--color-border, #e2e8f0);
     border-radius: 10px;
@@ -1452,7 +1452,7 @@
 
   .help-list li {
     display: flex;
-    align-items: center;
+    align-items: flex-start;
     gap: 6px;
     font-size: 12px;
     line-height: 1.4;
