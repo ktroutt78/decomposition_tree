@@ -1017,12 +1017,21 @@
         <ul class="help-list">
           <li>
             <span class="help-chip">
-              <svg width="14" height="14" viewBox="0 0 20 20">
+              <svg width="16" height="16" viewBox="0 0 20 20">
                 <circle cx="10" cy="10" r="10" fill="#5b8dee"/>
                 <text x="10" y="15" text-anchor="middle" fill="white" font-size="16" font-weight="700" font-family="system-ui">+</text>
               </svg>
             </span>
-            Click <strong>+</strong> to drill into a dimension; <strong>−</strong> to collapse
+            Click <strong>+</strong> to drill into a dimension
+          </li>
+          <li>
+            <span class="help-chip">
+              <svg width="16" height="16" viewBox="0 0 20 20">
+                <circle cx="10" cy="10" r="10" fill="#94a3b8"/>
+                <text x="10" y="15" text-anchor="middle" fill="white" font-size="20" font-weight="700" font-family="system-ui">−</text>
+              </svg>
+            </span>
+            Click <strong>−</strong> to collapse a node
           </li>
           <li>
             <span class="help-chip help-chip--bar"></span>
@@ -1034,7 +1043,7 @@
           </li>
         </ul>
 
-        <h4 class="help-section-title" style="margin-top:12px">Zoom panel (bottom right)</h4>
+        <h4 class="help-section-title" style="margin-top:14px">Zoom panel (bottom right)</h4>
         <ul class="help-list">
           <li>
             <span class="help-chip">
@@ -1044,14 +1053,17 @@
                 <path d="M10 10l2.5 2.5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
               </svg>
             </span>
-            <span class="help-chip" style="margin-left:-2px">
+            <strong>Zoom in</strong> — magnify the tree
+          </li>
+          <li>
+            <span class="help-chip">
               <svg width="13" height="13" viewBox="0 0 14 14" fill="none">
                 <circle cx="6" cy="6" r="5" stroke="currentColor" stroke-width="1.4"/>
                 <path d="M3.5 6h5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
                 <path d="M10 10l2.5 2.5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
               </svg>
             </span>
-            <strong>Zoom in / out</strong>
+            <strong>Zoom out</strong> — see more of the tree
           </li>
           <li>
             <span class="help-chip">
@@ -1076,12 +1088,15 @@
                 <path d="M7 10.5V3.5M3.5 6.5L7 3l3.5 3.5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
               </svg>
             </span>
-            <span class="help-chip" style="margin-left:-2px">
+            <strong>More children</strong> — show more groups per level (+5)
+          </li>
+          <li>
+            <span class="help-chip">
               <svg width="13" height="13" viewBox="0 0 14 14" fill="none">
                 <path d="M7 3.5v7M3.5 7.5L7 11l3.5-3.5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
               </svg>
             </span>
-            <strong>Max children ↑/↓</strong> — show more or fewer groups per level
+            <strong>Fewer children</strong> — show fewer groups per level (−5)
           </li>
         </ul>
 
@@ -1417,7 +1432,7 @@
     position: absolute;
     top: calc(100% + 8px);
     right: 0;
-    width: 320px;
+    width: 360px;
     background: var(--color-surface, #fff);
     border: 1px solid var(--color-border, #e2e8f0);
     border-radius: 10px;
