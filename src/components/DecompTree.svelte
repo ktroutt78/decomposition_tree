@@ -51,6 +51,10 @@
   // smart-zoom to that parent + its new children. Reset to null after consuming.
   let _lastDrilledNodeId = null;
 
+  // When true, doFitToView skips the zoom transform and returns immediately.
+  // Set before collapse / re-expand updates so the user's current pan/zoom is preserved.
+  let _suppressNextFit = false;
+
   // HTML column headers (driven from D3 layout, updated each render)
   let colHeaders = []; // [{ dimName, dataX }]
 
@@ -595,6 +599,7 @@
 
   function doFitToView(rootData, cfg) {
     if (!mainGroup || !svgEl || !rootData) return;
+    if (_suppressNextFit) { _suppressNextFit = false; return; }
     const isLR = cfg.orientation === 'LR';
     const nw = cfg.nodeWidth;
     const nh = _lastNodeH;
@@ -694,6 +699,7 @@
     if (node._collapsed) {
       // Previously drilled but collapsed by one-at-a-time logic — re-expand it
       // and collapse whichever sibling is currently expanded.
+      _suppressNextFit = true;
       treeRoot.update(root => {
         let r = updateNodeInTree(root, node.id, n => ({ ...n, _collapsed: false }));
         for (const sib of siblings) {
@@ -746,11 +752,13 @@
     if (node.children && !node._collapsed) {
       // Collapse = full reset: clears children and dimension so the user can choose
       // a different dimension next expansion. _rows is preserved for fast re-drill.
+      _suppressNextFit = true;
       treeRoot.update(root => updateNodeInTree(root, node.id,
         n => ({ ...n, children: null, _drillDimension: null, _collapsed: false })));
 
     } else if (node._collapsed) {
       // Re-expand; auto-collapse any currently-expanded siblings for one-at-a-time view
+      _suppressNextFit = true;
       treeRoot.update(root => {
         let r = updateNodeInTree(root, node.id, n => ({ ...n, _collapsed: false }));
         return collapseExpandedSiblings(r, siblings, node.id);
