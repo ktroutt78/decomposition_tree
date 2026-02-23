@@ -700,7 +700,15 @@
     const h = containerHeight || 600;
     // Cap at 1.2 for focused drills to prevent over-zooming on a small set of nodes
     const maxScale = usedSmartZoom ? 1.2 : 0.92;
-    const MIN_READABLE_SCALE = 0.6;
+    // Dynamic minimum: stop zooming out once the viewport shows ~8 children (LR) or
+    // ~9 children (TB) in the sibling direction — beyond that, scrollbars take over.
+    const siblingSlot = isLR
+      ? (nh + (cfg.siblingSpacing ?? 20))
+      : (nw + (cfg.siblingSpacing ?? 20));
+    const MIN_READABLE_SCALE = isLR
+      ? h / (8 * siblingSlot)
+      : w / (9 * siblingSlot);
+
     const naturalScale = Math.min(maxScale, Math.min(w / tw, h / th));
     const scale = Math.max(MIN_READABLE_SCALE, naturalScale);
     // When scale is clamped (tree too big to fit at readable size), anchor to the
@@ -718,6 +726,16 @@
     } else {
       tx = (w - tw * scale) / 2 - x0 * scale;
       ty = (h - th * scale) / 2 - y0 * scale;
+    }
+
+    // Ensure nodes never render behind the column-header overlay.
+    // LR: headers sit at the top (bottom edge ≈ 44px from container top).
+    // TB: headers sit at the left (right edge ≈ 160px from container left).
+    // y0+50 / x0+50 are the top/left edges of the content bounding box in layout space.
+    if (isLR && colHeaders.length) {
+      ty = Math.max(ty, 44 - (y0 + 50) * scale);
+    } else if (!isLR && colHeaders.length) {
+      tx = Math.max(tx, 160 - (x0 + 50) * scale);
     }
 
     d3.select(svgEl)
