@@ -700,12 +700,19 @@
     const h = containerHeight || 600;
     // Cap at 1.2 for focused drills to prevent over-zooming on a small set of nodes
     const maxScale = usedSmartZoom ? 1.2 : 0.92;
-    const MIN_READABLE_SCALE = 0.4;
-    const scale = Math.max(MIN_READABLE_SCALE, Math.min(maxScale, Math.min(w / tw, h / th)));
+    const MIN_READABLE_SCALE = 0.6;
+    const naturalScale = Math.min(maxScale, Math.min(w / tw, h / th));
+    const scale = Math.max(MIN_READABLE_SCALE, naturalScale);
+    // When scale is clamped (tree too big to fit at readable size), anchor to the
+    // top-left so the root node is always visible; scrollbars handle the overflow.
+    const scaleClamped = naturalScale < MIN_READABLE_SCALE;
 
     // Smart zoom always centers the focused region; full fit respects alignment setting
     let tx, ty;
-    if (!usedSmartZoom && cfg.initialAlignment === 'top-left' && isLR) {
+    if (usedSmartZoom) {
+      tx = (w - tw * scale) / 2 - x0 * scale;
+      ty = (h - th * scale) / 2 - y0 * scale;
+    } else if (scaleClamped || (cfg.initialAlignment === 'top-left' && isLR)) {
       tx = 40 - x0 * scale;
       ty = 40 - y0 * scale;
     } else {
