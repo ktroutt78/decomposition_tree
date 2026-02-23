@@ -4,7 +4,7 @@
   import * as d3 from 'd3';
   import { treeRoot, pendingDrillNode, statusMessage, selectedNodeInfo } from '../stores/treeState.js';
   import { selectMarksForFilter, clearMarkSelection } from '../lib/tableau.js';
-  import { config } from '../stores/config.js';
+  import { config, saveConfig } from '../stores/config.js';
   import { encodingMap } from '../stores/encodings.js';
   import { drillDown, toggleCollapse, updateNodeInTree, findParent, toggleSortAtDimension, reapplyExpansion } from '../lib/treeEngine.js';
   import { formatValue, truncate } from '../lib/formatters.js';
@@ -798,8 +798,7 @@
     if (root) doFitToView(root, cfg);
   }
 
-  // Zoom to the deepest currently-expanded node and its children.
-  // Falls back to fit-all if nothing has been drilled.
+  // Find the deepest currently-expanded node and zoom to it + its children.
   function focusCurrentDrill() {
     const root = get(treeRoot);
     const cfg  = get(config);
@@ -818,9 +817,22 @@
     const deepest = findDeepestDrilled(root);
     if (deepest) {
       _lastDrilledNodeId = deepest.id;
-      doFitToView(root, { ...cfg, smartZoom: true }); // force smart zoom for this action
+      doFitToView(root, { ...cfg, smartZoom: true });
     } else {
-      doFitToView(root, cfg); // nothing drilled — fit all
+      doFitToView(root, cfg);
+    }
+  }
+
+  // Toggle smart zoom on/off.
+  // Turning ON also immediately zooms to the current drill level.
+  // Turning OFF leaves the view where it is.
+  async function toggleSmartZoom() {
+    const current = get(config);
+    _suppressNextFit = true; // suppress the fit triggered by the config change
+    await saveConfig({ ...current, smartZoom: !current.smartZoom });
+    if (!current.smartZoom) {
+      // Was OFF, now ON — zoom to current drill level
+      focusCurrentDrill();
     }
   }
 
@@ -917,9 +929,11 @@
     </button>
     <button
       class="zoom-btn zoom-btn-smart"
-      on:click={focusCurrentDrill}
-      title="Zoom to current drill level"
-      aria-label="Zoom to current drill level"
+      class:smart-on={$config.smartZoom}
+      on:click={toggleSmartZoom}
+      title={$config.smartZoom ? 'Smart zoom: on — click to disable' : 'Smart zoom: off — click to enable'}
+      aria-label="Toggle smart zoom"
+      aria-pressed={$config.smartZoom}
     >
       <!-- Crosshair / focus icon -->
       <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
@@ -998,6 +1012,11 @@
   .zoom-btn-smart {
     border-top: 1px solid var(--color-border-subtle, #f1f5f9);
     border-radius: 0 0 5px 5px;
+  }
+
+  .zoom-btn-smart.smart-on {
+    color: var(--color-accent, #4a6cf7);
+    background: var(--color-accent-subtle, #eff3ff);
   }
 
 
