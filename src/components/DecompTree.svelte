@@ -752,7 +752,9 @@
     if (node.children && !node._collapsed) {
       // Collapse = full reset: clears children and dimension so the user can choose
       // a different dimension next expansion. _rows is preserved for fast re-drill.
-      _suppressNextFit = true;
+      // Zoom back to the parent level (parent + its children) so the user can see
+      // where they are after collapsing. Fall back to root if no parent.
+      _lastDrilledNodeId = d.parent?.data?.id ?? d.data.id;
       treeRoot.update(root => updateNodeInTree(root, node.id,
         n => ({ ...n, children: null, _drillDimension: null, _collapsed: false })));
 
