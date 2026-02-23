@@ -654,7 +654,7 @@
     }
   }
 
-  function doFitToView(rootData, cfg) {
+  function doFitToView(rootData, cfg, { skipMinScale = false } = {}) {
     if (!mainGroup || !svgEl || !rootData) return;
     if (_suppressNextFit) { _suppressNextFit = false; return; }
     const isLR = cfg.orientation === 'LR';
@@ -710,10 +710,12 @@
       : w / (9 * siblingSlot);
 
     const naturalScale = Math.min(maxScale, Math.min(w / tw, h / th));
-    const scale = Math.max(MIN_READABLE_SCALE, naturalScale);
+    // skipMinScale: explicit "Fit to view" — show the whole tree regardless of size.
+    // Otherwise clamp so auto-fits never zoom out past the readable floor.
+    const scale = skipMinScale ? naturalScale : Math.max(MIN_READABLE_SCALE, naturalScale);
     // When scale is clamped (tree too big to fit at readable size), anchor to the
     // top-left so the root node is always visible; scrollbars handle the overflow.
-    const scaleClamped = naturalScale < MIN_READABLE_SCALE;
+    const scaleClamped = !skipMinScale && naturalScale < MIN_READABLE_SCALE;
 
     // Smart zoom always centers the focused region; full fit respects alignment setting
     let tx, ty;
@@ -906,7 +908,7 @@
   function fitView() {
     const root = get(treeRoot);
     const cfg  = get(config);
-    if (root) doFitToView(root, cfg);
+    if (root) doFitToView(root, cfg, { skipMinScale: true });
   }
 
   // Find the deepest currently-expanded node and zoom to it + its children.
