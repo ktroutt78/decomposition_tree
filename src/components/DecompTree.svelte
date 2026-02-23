@@ -738,7 +738,11 @@
     if (node._collapsed) {
       // Previously drilled but collapsed by one-at-a-time logic — re-expand it
       // and collapse whichever sibling is currently expanded.
-      _suppressNextFit = true;
+      if (get(config).smartZoom) {
+        _lastDrilledNodeId = node.id; // smart zoom to this re-expanded node + its children
+      } else {
+        _suppressNextFit = true;      // no smart zoom: keep current pan/zoom
+      }
       treeRoot.update(root => {
         let r = updateNodeInTree(root, node.id, n => ({ ...n, _collapsed: false }));
         for (const sib of siblings) {
@@ -802,7 +806,11 @@
 
     } else if (node._collapsed) {
       // Re-expand; auto-collapse any currently-expanded siblings for one-at-a-time view
-      _suppressNextFit = true;
+      if (get(config).smartZoom) {
+        _lastDrilledNodeId = node.id; // smart zoom to this re-expanded node + its children
+      } else {
+        _suppressNextFit = true;      // no smart zoom: keep current pan/zoom
+      }
       treeRoot.update(root => {
         let r = updateNodeInTree(root, node.id, n => ({ ...n, _collapsed: false }));
         return collapseExpandedSiblings(r, siblings, node.id);
