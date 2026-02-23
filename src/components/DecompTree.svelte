@@ -142,7 +142,8 @@
         });
       d3.select(svgEl).selectAll('.tree-link')
         .transition().duration(200)
-        .attr('stroke', d => resolveLinkColor(d, sel, cfg));
+        .attr('stroke', d => resolveLinkColor(d, sel, cfg))
+        .attr('stroke-width', d => resolveLinkWidth(d, sel));
     });
 
     return () => { unsubRoot(); unsubConfig(); unsubSelected(); };
@@ -312,6 +313,7 @@
       .attr('class', 'tree-link')
       .attr('d', linkGen)
       .attr('stroke', d => resolveLinkColor(d, sel, cfg))
+      .attr('stroke-width', d => resolveLinkWidth(d, sel))
       .attr('stroke-opacity', 0)
       .transition(tLayout).attr('stroke-opacity', linkOpacity);
 
@@ -319,6 +321,7 @@
       .transition(tLayout)
       .attr('d', linkGen)
       .attr('stroke', d => resolveLinkColor(d, sel, cfg))
+      .attr('stroke-width', d => resolveLinkWidth(d, sel))
       .attr('stroke-opacity', linkOpacity);
 
     // ── Nodes ─────────────────────────────────────────────────────────────
@@ -538,16 +541,11 @@
   // A link is on the expansion path when its target is not collapsed AND has no
   // drilled+expanded sibling (meaning it IS the currently-open branch, not a
   // grey/collapsed sibling). Negative nodes on any active path use the negative color.
-  function resolveLinkColor(link, sel, cfg) {
+  // Returns true when this link is on the active expansion path.
+  // Used by both resolveLinkColor and resolveLinkWidth to keep logic in sync.
+  function isLinkActive(link, sel) {
     const tdata = link.target.data;
-    const negColor      = cfg.linkColorNegative || '#f472b6';
-    const inactiveColor = cfg.linkColorInactive  || '#cbd5e1';
-    const activeColor   = getActiveColor(cfg);
 
-    // Expansion path check — is this link on the active drill chain?
-    // Active = target is not collapsed AND has no drilled+expanded sibling.
-    // (In one-at-a-time mode, at most one sibling is expanded; the open branch
-    // and all its descendants down to the deepest level are active.)
     function onExpansionPath() {
       if (tdata._collapsed) return false;
       const dSiblings = link.target.parent?.children || [];
@@ -560,20 +558,22 @@
 
     if (sel) {
       const tid = tdata.id;
-      // Target is the selected node or an ancestor of it (root → selected path)
-      if (sel.id === tid || sel.id.startsWith(tid + '|')) {
-        return tdata.value < 0 ? negColor : activeColor;
-      }
-      // Target is a descendant of the selected node — apply expansion path logic
-      // so only the drilled branch below the selection stays colored
-      if (tid.startsWith(sel.id + '|')) {
-        return onExpansionPath() ? (tdata.value < 0 ? negColor : activeColor) : inactiveColor;
-      }
-      return inactiveColor;
+      if (sel.id === tid || sel.id.startsWith(tid + '|')) return true;
+      if (tid.startsWith(sel.id + '|')) return onExpansionPath();
+      return false;
     }
+    return onExpansionPath();
+  }
 
-    // No selection — color the expansion path
-    return onExpansionPath() ? (tdata.value < 0 ? negColor : activeColor) : inactiveColor;
+  function resolveLinkColor(link, sel, cfg) {
+    if (!isLinkActive(link, sel)) return cfg.linkColorInactive || '#94a3b8';
+    return link.target.data.value < 0
+      ? (cfg.linkColorNegative || '#f472b6')
+      : getActiveColor(cfg);
+  }
+
+  function resolveLinkWidth(link, sel) {
+    return isLinkActive(link, sel) ? 2.5 : 1.5;
   }
 
   // Build a link generator that respects cfg.linkStyle: 'step' | 'curved' | 'straight'

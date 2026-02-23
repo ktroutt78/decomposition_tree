@@ -34,7 +34,7 @@ export const defaultConfig = {
   smartZoom: true,
   barScaleMode: 'parent',
   linkColorActive: '#5b8dee',
-  linkColorInactive: '#cbd5e1',
+  linkColorInactive: '#94a3b8',
   linkColorNegative: '#f472b6',
   linkOpacity: 0.9,
   headerFontSize: 12,
