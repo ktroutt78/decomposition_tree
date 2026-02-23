@@ -6,7 +6,7 @@
   import { selectMarksForFilter, clearMarkSelection } from '../lib/tableau.js';
   import { config } from '../stores/config.js';
   import { encodingMap } from '../stores/encodings.js';
-  import { drillDown, toggleCollapse, updateNodeInTree, findParent, toggleSortAtDimension } from '../lib/treeEngine.js';
+  import { drillDown, toggleCollapse, updateNodeInTree, findParent, toggleSortAtDimension, reapplyExpansion } from '../lib/treeEngine.js';
   import { formatValue, truncate } from '../lib/formatters.js';
   import Tooltip from './Tooltip.svelte';
   import DimensionPicker from './DimensionPicker.svelte';
@@ -710,14 +710,16 @@
         return r;
       });
     } else if (!node.children) {
-      // Un-drilled node: if a sibling is already drilled, auto-drill this node
-      // using the same dimension so the user doesn't have to click +.
-      const drilledSibling = siblings.find(s => s.id !== node.id && s.children?.length > 0);
-      const siblingDim = drilledSibling?.children?.[0]?._drillDimension ?? null;
-      if (siblingDim) {
-        const siblingSort = drilledSibling?.children?.[0]?._sortOrder || 'desc';
+      // Un-drilled node: if a sibling is already drilled, replay its full expansion
+      // pattern onto this node (EBL-008). Prefer the currently-expanded sibling so
+      // the visible drill path is used; fall back to any sibling with children.
+      const drilledSibling =
+        siblings.find(s => s.id !== node.id && s.children?.length > 0 && !s._collapsed) ||
+        siblings.find(s => s.id !== node.id && s.children?.length > 0);
+      if (drilledSibling) {
         const cfg = get(config);
-        const updated = drillDown(node, siblingDim, get(encodingMap), cfg.maxChildrenShown, cfg.excludeNulls, siblingSort);
+        // reapplyExpansion recursively re-drills using the sibling's full dimension path
+        const updated = reapplyExpansion(drilledSibling, node, get(encodingMap), cfg.maxChildrenShown, cfg.excludeNulls);
         _lastDrilledNodeId = node.id; // signal doFitToView to smart-zoom this node
         treeRoot.update(root => {
           let r = updateNodeInTree(root, node.id, () => updated);
@@ -728,7 +730,8 @@
           }
           return r;
         });
-        statusMessage.set(`Drilled into: ${siblingDim}`);
+        const firstDim = drilledSibling.children[0]?._drillDimension ?? '';
+        statusMessage.set(`Drilled into: ${firstDim}`);
       }
     }
   }

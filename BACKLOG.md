@@ -11,7 +11,6 @@ Enhancement IDs use the format **EBL-XXX**. Reference the ID when requesting an 
 | ID | Size | Description | Notes |
 |---|---|---|---|
 | EBL-003 | **XL** | **View underlying data from tooltip** | Add a button inside the tooltip to open a detail drawer showing all rows that make up the selected node — displaying dimension attributes from the Marks card. Requires a new modal/table component, row pagination for large datasets, and formatting logic. |
-| EBL-008 | **L** | **Preserve deep expansion pattern when switching level-1 siblings** | When a multi-level drill is open (e.g. Cip6 Name → Soc 2 Name Year 1 → Is High Demand) and the user clicks a different level-1 sibling, the full expansion pattern should be replayed on the new branch — not just the first level. Requires extracting a drill-path template from the active branch then recursively applying it to the new branch. |
 
 ---
 
@@ -65,6 +64,7 @@ Enhancement IDs use the format **EBL-XXX**. Reference the ID when requesting an 
 | EBL-007 | Column header formatting — font size and color controls for dimension column headers ("▸ by Region") in Settings under a dedicated Column Headers section |
 | EBL-010 | Tooltip fixes — title now wraps instead of truncating; hint text updated to reference actual +/− buttons ("Click + to drill into an attribute", etc.); row label and body text darkened to primary color |
 | EBL-011 | Smart zoom on drill — after each new drill, D3 zoom animates to frame only the drilled parent + its new children; full-tree fit-to-view button still available; Settings toggle (on by default) to revert to fit-all behavior |
+| EBL-008 | Preserve deep expansion pattern when switching siblings — clicking an un-drilled sibling now replays the full multi-level drill path from the expanded sibling using `reapplyExpansion`, restoring all nested dimensions and collapse states |
 
 ### v2.1 — Interaction & layout refinements
 
