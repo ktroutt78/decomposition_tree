@@ -204,6 +204,20 @@ export function findParent(root, childId) {
 }
 
 /**
+ * Walk the tree to find the deepest node that has visible (non-collapsed) children.
+ * Used for the header breadcrumb to show the full drill path.
+ */
+export function getDeepestExpandedNode(node) {
+  if (!node?.children || node._collapsed) return node;
+  for (const child of node.children) {
+    if (child.children?.length && !child._collapsed) {
+      return getDeepestExpandedNode(child);
+    }
+  }
+  return node;
+}
+
+/**
  * After a filter/data refresh, replay the old tree's drill-down operations
  * against the new root's fresh row data, restoring expansion and collapse state.
  *

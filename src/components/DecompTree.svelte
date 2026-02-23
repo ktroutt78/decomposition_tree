@@ -830,8 +830,6 @@
           }
           return r;
         });
-        const firstDim = drilledSibling.children[0]?._drillDimension ?? '';
-        statusMessage.set(`Drilled into: ${firstDim}`);
       }
     }
   }
@@ -1060,7 +1058,6 @@
       return r;
     });
     pendingDrillNode.set(null);
-    statusMessage.set(`Drilled into: ${dimName}`);
   }
 </script>
 

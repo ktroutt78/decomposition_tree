@@ -1,10 +1,23 @@
 <script>
   import { treeRoot, statusMessage, configPanelOpen } from '../stores/treeState.js';
   import { reloadData } from '../lib/tableau.js';
+  import { getDeepestExpandedNode } from '../lib/treeEngine.js';
 
   async function reload() {
     await reloadData();
   }
+
+  $: breadcrumb = (() => {
+    const root = $treeRoot;
+    if (!root?.children?.length) return null;
+    const deepest = getDeepestExpandedNode(root);
+    const segments = (deepest.dimensionPath || []).map(
+      ({ field, value }) => `by ${field}: ${value}`
+    );
+    const lastDim = deepest.children?.[0]?._drillDimension;
+    if (lastDim) segments.push(`by ${lastDim}`);
+    return segments.length ? segments.join(' > ') : null;
+  })();
 </script>
 
 <header class="app-header">
@@ -26,7 +39,7 @@
     </div>
     <span class="app-title">Decomposition Tree</span>
     <span class="header-divider">|</span>
-    <span class="status-text">{$statusMessage}</span>
+    <span class="status-text" title={breadcrumb || $statusMessage}>{breadcrumb ?? $statusMessage}</span>
   </div>
 
   <div class="header-right">
