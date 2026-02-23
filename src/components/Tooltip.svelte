@@ -86,11 +86,11 @@
 
     <div class="tooltip-hint">
       {#if data.children && !data._collapsed}
-        Click to collapse
+        Click − to collapse
       {:else if data._collapsed}
-        Click to expand
+        Click + to expand
       {:else}
-        Click to drill down
+        Click + to drill into an attribute
       {/if}
     </div>
   </div>
@@ -119,7 +119,7 @@
 
   .tooltip-header {
     display: flex;
-    align-items: center;
+    align-items: flex-start;
     justify-content: space-between;
     gap: var(--space-2);
     margin-bottom: var(--space-2);
@@ -129,9 +129,7 @@
     font-weight: var(--font-semibold);
     font-size: var(--text-md);
     color: var(--color-text-primary);
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
+    word-break: break-word;
   }
 
   .tooltip-badge {
