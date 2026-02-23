@@ -4,7 +4,7 @@
   import * as d3 from 'd3';
   import { treeRoot, pendingDrillNode, statusMessage, selectedNodeInfo } from '../stores/treeState.js';
   import { selectMarksForFilter, clearMarkSelection } from '../lib/tableau.js';
-  import { config, saveConfig } from '../stores/config.js';
+  import { config } from '../stores/config.js';
   import { encodingMap } from '../stores/encodings.js';
   import { drillDown, toggleCollapse, updateNodeInTree, findParent, toggleSortAtDimension } from '../lib/treeEngine.js';
   import { formatValue, truncate } from '../lib/formatters.js';
@@ -795,9 +795,30 @@
     if (root) doFitToView(root, cfg);
   }
 
-  async function toggleSmartZoom() {
-    const current = get(config);
-    await saveConfig({ ...current, smartZoom: !current.smartZoom });
+  // Zoom to the deepest currently-expanded node and its children.
+  // Falls back to fit-all if nothing has been drilled.
+  function focusCurrentDrill() {
+    const root = get(treeRoot);
+    const cfg  = get(config);
+    if (!root) return;
+
+    function findDeepestDrilled(node, depth = 0) {
+      if (!node.children?.length || node._collapsed) return null;
+      let best = { id: node.id, depth };
+      for (const child of node.children) {
+        const deeper = findDeepestDrilled(child, depth + 1);
+        if (deeper && deeper.depth > best.depth) best = deeper;
+      }
+      return best;
+    }
+
+    const deepest = findDeepestDrilled(root);
+    if (deepest) {
+      _lastDrilledNodeId = deepest.id;
+      doFitToView(root, { ...cfg, smartZoom: true }); // force smart zoom for this action
+    } else {
+      doFitToView(root, cfg); // nothing drilled — fit all
+    }
   }
 
   function handleSortToggle(dim) {
@@ -893,11 +914,9 @@
     </button>
     <button
       class="zoom-btn zoom-btn-smart"
-      class:smart-on={$config.smartZoom}
-      on:click={toggleSmartZoom}
-      title={$config.smartZoom ? 'Smart zoom: on' : 'Smart zoom: off'}
-      aria-label="Toggle smart zoom"
-      aria-pressed={$config.smartZoom}
+      on:click={focusCurrentDrill}
+      title="Zoom to current drill level"
+      aria-label="Zoom to current drill level"
     >
       <!-- Crosshair / focus icon -->
       <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
@@ -978,10 +997,6 @@
     border-radius: 0 0 5px 5px;
   }
 
-  .zoom-btn-smart.smart-on {
-    color: var(--color-accent, #4a6cf7);
-    background: var(--color-accent-subtle, #eff3ff);
-  }
 
   /* Column headers — HTML overlay; position/transform set inline per orientation */
   .col-header-overlay {
