@@ -67,11 +67,15 @@
   onMount(() => {
     initTableau(onDataReady);
 
-    // When maxChildrenShown changes (user saves Settings), re-drill the existing
-    // tree so "(Other)" grouping updates immediately without requiring a collapse/expand.
+    // When maxChildrenShown or excludeNulls changes (user saves Settings),
+    // re-drill the existing tree so the update applies immediately without
+    // requiring a collapse/expand cycle.
     let _prevMax = null;
+    let _prevExcludeNulls = null;
     const unsubConfig = config.subscribe(cfg => {
-      if (_prevMax !== null && cfg.maxChildrenShown !== _prevMax) {
+      const maxChanged = _prevMax !== null && cfg.maxChildrenShown !== _prevMax;
+      const nullsChanged = _prevExcludeNulls !== null && cfg.excludeNulls !== _prevExcludeNulls;
+      if (maxChanged || nullsChanged) {
         const root = get(treeRoot);
         const encMap = get(encodingMap);
         if (root && root._rows) {
@@ -80,6 +84,7 @@
         }
       }
       _prevMax = cfg.maxChildrenShown;
+      _prevExcludeNulls = cfg.excludeNulls;
     });
 
     return () => unsubConfig();
