@@ -881,9 +881,24 @@
       });
 
     } else {
-      // Un-drilled node: always show the DimensionPicker so the user can choose
-      // any dimension. Auto-drill by sibling dimension only happens on bar click.
-      pendingDrillNode.set(node);
+      // Un-drilled node: if a sibling is already drilled, expand this node with
+      // the same dimension path (same as bar-click behavior). Otherwise show picker.
+      const drilledSibling =
+        siblings.find(s => s.id !== node.id && s.children?.length > 0 && !s._collapsed) ||
+        siblings.find(s => s.id !== node.id && s.children?.length > 0);
+      if (drilledSibling) {
+        const cfg = get(config);
+        const encMap = get(encodingMap);
+        const updated = reapplyExpansion(drilledSibling, node, encMap, cfg.maxChildrenShown, cfg.excludeNulls);
+        _lastDrilledNodeId = node.id;
+        if (!cfg.smartZoom) _suppressNextFit = true;
+        treeRoot.update(root => {
+          let r = updateNodeInTree(root, node.id, () => updated);
+          return collapseExpandedSiblings(r, siblings, node.id);
+        });
+      } else {
+        pendingDrillNode.set(node);
+      }
     }
   }
 
