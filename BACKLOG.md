@@ -11,7 +11,6 @@ Enhancement IDs use the format **EBL-XXX**. Reference the ID when requesting an 
 | ID | Size | Description | Notes |
 |---|---|---|---|
 | EBL-003 | **XL** | **View underlying data from tooltip** | Add a button inside the tooltip to open a detail drawer showing all rows that make up the selected node — displaying dimension attributes from the Marks card. Requires a new modal/table component, row pagination for large datasets, and formatting logic. |
-| EBL-013 | **M** | **Save decomposition tree expansion state** | Persist the current expansion state (which nodes are drilled, which dimension at each level, sort order, collapse/expand) so that when the workbook is reopened the tree restores to that state instead of starting from the measure aggregate. Store via Tableau extension settings; replay saved state after initial data load. Consider schema/measure change edge cases. |
 
 ---
 
@@ -67,6 +66,7 @@ Enhancement IDs use the format **EBL-XXX**. Reference the ID when requesting an 
 | EBL-011 | Smart zoom on drill — after each new drill, D3 zoom animates to frame only the drilled parent + its new children; full-tree fit-to-view button still available; Settings toggle (on by default) to revert to fit-all behavior |
 | EBL-008 | Preserve deep expansion pattern when switching siblings — clicking an un-drilled sibling now replays the full multi-level drill path from the expanded sibling using `reapplyExpansion`, restoring all nested dimensions and collapse states |
 | EBL-012 | In-viz help overlay — `?` button in the upper-right corner opens an animated popover explaining all controls (drill/collapse, bar select, column header sort, zoom in/out, fit to view, smart zoom, max children); dismisses on outside click or Escape |
+| EBL-013 | Save decomposition tree expansion state — persist expansion state (which nodes are drilled, dimension at each level, sort order, collapse/expand) via Tableau extension settings; replay saved state after initial data load |
 
 ### v2.1 — Interaction & layout refinements
 

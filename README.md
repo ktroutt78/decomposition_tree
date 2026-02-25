@@ -60,8 +60,28 @@ An interactive hierarchical decomposition tree built with Svelte and D3. Drop a 
 When the tree content extends beyond the viewport at the current zoom level, thin scrollbars appear at the bottom and right edges. Drag a scrollbar thumb to pan — or use the trackpad or mouse directly. Scrollbars disappear automatically when all nodes fit within the viewport.
 
 ### Toolbar
-- **Reload** (↺): Fetches fresh data from Tableau and resets the tree to its initial state
+- **Reload** (↺): Fetches fresh data from Tableau and restores the tree (saved expansion state is reapplied if one exists)
+- **Save state** / **Clear saved state**: Shown only when the setting **Allow saving expansion state** is on (see below)
 - **Settings** (⚙): Opens the configuration panel
+- **Help** (?): Opens an in-viz overlay explaining drill/collapse, bar select, column header sort, zoom controls, smart zoom, and max children. Dismiss with a click outside or Escape.
+
+### Save expansion state
+
+You can save the current tree expansion (which nodes are drilled, which are collapsed, and sort order) so it restores the next time the view is opened or data is reloaded.
+
+1. **Enable the feature**  
+   Open **Settings** (⚙) and turn on **Allow saving expansion state**. Click **Apply**.
+
+2. **Use the header buttons**  
+   - **Save state** — Saves the current drill path and collapse state to the workbook. You must have drilled at least one level (the tree must have children) for this to do anything.  
+   - **Clear saved state** — Removes the saved state so the next open or reload starts from the root with no expansion.
+
+3. **When it restores**  
+   Saved state is applied when:
+   - The sheet is opened (or the extension loads)
+   - You click **Reload** (data is refreshed and the saved expansion is replayed on the new data)
+
+If the data no longer has a dimension that was used in the saved expansion, the extension falls back to the root (no expansion). The saved state is stored in Tableau’s extension settings for the workbook (same as other settings).
 
 ---
 
@@ -108,6 +128,7 @@ Open the settings panel with the ⚙ gear icon in the top-right corner. Settings
 | Background color | Visualization area background color | White |
 | Show group count | Show how many child groups a drilled node has (e.g. "• 4 groups") | On |
 | Exclude null values | Hide null/empty dimension members when drilling | Off |
+| Allow saving expansion state | When on, **Save state** and **Clear saved state** appear in the header so users can persist the current tree expansion across reloads and sessions | Off |
 | Value format | **Auto** (reads Tableau's native format), **Number** (1,234), **Currency** ($1.2K), **Percent** (12.3%) | Auto |
 | Currency symbol | Prefix used when Value format is set to Currency | $ |
 | Measure display name | Override the measure label shown on nodes (e.g. "Revenue" instead of "SUM(Sales)"). Leave blank to use the field name, auto-stripped of aggregation prefix | Auto |
@@ -290,3 +311,9 @@ decomp_tree_v2/
 | [D3.js](https://d3js.org) | 7.x | Tree layout and SVG rendering |
 | [Vite](https://vitejs.dev) | 6.x | Build tool and dev server |
 | Tableau Extensions API | 1.11+ | Tableau integration |
+
+---
+
+## Enhancement Backlog
+
+Planned and completed enhancements are tracked in [BACKLOG.md](./BACKLOG.md). Enhancement IDs use the format **EBL-XXX**. Recently completed (v2.2) include: save expansion state (EBL-013), in-viz help overlay (EBL-012), smart zoom on drill (EBL-011), and dashboard actions / mark selection (EBL-001).
