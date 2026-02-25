@@ -11,6 +11,7 @@ Enhancement IDs use the format **EBL-XXX**. Reference the ID when requesting an 
 | ID | Size | Description | Notes |
 |---|---|---|---|
 | EBL-003 | **XL** | **View underlying data from tooltip** | Add a button inside the tooltip to open a detail drawer showing all rows that make up the selected node — displaying dimension attributes from the Marks card. Requires a new modal/table component, row pagination for large datasets, and formatting logic. |
+| EBL-013 | **M** | **Save decomposition tree expansion state** | Persist the current expansion state (which nodes are drilled, which dimension at each level, sort order, collapse/expand) so that when the workbook is reopened the tree restores to that state instead of starting from the measure aggregate. Store via Tableau extension settings; replay saved state after initial data load. Consider schema/measure change edge cases. |
 
 ---
 

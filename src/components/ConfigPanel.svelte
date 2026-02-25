@@ -343,6 +343,21 @@
         </button>
       </label>
 
+      <label class="toggle-row">
+        <span class="toggle-label">Allow saving expansion state</span>
+        <button
+          class="toggle-btn"
+          class:on={draft.allowSaveExpansionState}
+          on:click={() => draft.allowSaveExpansionState = !draft.allowSaveExpansionState}
+          role="switch"
+          aria-label="Allow saving expansion state"
+          aria-checked={draft.allowSaveExpansionState}
+        >
+          <span class="toggle-thumb"></span>
+        </button>
+      </label>
+      <p class="field-hint" style="margin-top: 0">When on, Save state and Clear saved state appear in the header. Only turn on if you want users to persist the current tree expansion.</p>
+
       <div class="field-group" style="margin-top: var(--space-3)">
         <label class="field-label" for="valueFormat">Value format</label>
         <select id="valueFormat" bind:value={draft.valueFormat} class="select-input">

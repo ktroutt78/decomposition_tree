@@ -41,7 +41,8 @@ export const defaultConfig = {
   headerColor: '#334155',
   animationDuration: 300,
   initialAlignment: 'top-left',
-  tooltipNarrative: '<measure>: <value>\n% of Parent: <pct>\nRecords: <count>'
+  tooltipNarrative: '<measure>: <value>\n% of Parent: <pct>\nRecords: <count>',
+  allowSaveExpansionState: false
 };
 
 export const config = writable({ ...defaultConfig });

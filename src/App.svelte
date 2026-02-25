@@ -1,10 +1,10 @@
 <script>
   import { onMount } from 'svelte';
-  import { initTableau } from './lib/tableau.js';
+  import { initTableau, loadExpansionState } from './lib/tableau.js';
   import { isReadyToRender } from './stores/encodings.js';
   import { treeRoot, statusMessage, configPanelOpen, summaryRows } from './stores/treeState.js';
   import { encodingMap } from './stores/encodings.js';
-  import { buildRootNode, reapplyExpansion } from './lib/treeEngine.js';
+  import { buildRootNode, reapplyExpansion, replayExpansion } from './lib/treeEngine.js';
   import { detectValueFormat } from './lib/formatters.js';
   import { config } from './stores/config.js';
   import { get } from 'svelte/store';
@@ -51,7 +51,14 @@
         treeRoot.set(freshRoot);
       }
     } else {
-      treeRoot.set(freshRoot);
+      const recipe = loadExpansionState();
+      const cfg = get(config);
+      if (recipe && freshRoot) {
+        const restored = replayExpansion(freshRoot, recipe, encMap, cfg.maxChildrenShown, cfg.excludeNulls);
+        treeRoot.set(restored);
+      } else {
+        treeRoot.set(freshRoot);
+      }
     }
 
     const root = get(treeRoot);

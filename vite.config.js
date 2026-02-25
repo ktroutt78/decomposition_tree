@@ -13,6 +13,11 @@ const httpsOpts = hasCerts
 
 export default defineConfig({
   plugins: [svelte()],
+  test: {
+    globals: true,
+    environment: 'node',
+    include: ['src/**/*.test.js']
+  },
   base: '/decomposition_tree/',
   server:  { port: 8000, strictPort: true, https: httpsOpts },
   preview: { port: 8000, strictPort: true, https: httpsOpts },

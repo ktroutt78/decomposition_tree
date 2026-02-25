@@ -1,10 +1,28 @@
 <script>
   import { treeRoot, statusMessage, configPanelOpen } from '../stores/treeState.js';
-  import { reloadData } from '../lib/tableau.js';
-  import { getDeepestExpandedNode } from '../lib/treeEngine.js';
+  import { config } from '../stores/config.js';
+  import { reloadData, saveExpansionState, clearExpansionState } from '../lib/tableau.js';
+  import { getDeepestExpandedNode, serializeExpansion } from '../lib/treeEngine.js';
 
   async function reload() {
     await reloadData();
+  }
+
+  async function saveState() {
+    const root = $treeRoot;
+    if (!root?.children?.length) {
+      statusMessage.set('Nothing to save — drill into the tree first');
+      return;
+    }
+    const recipe = serializeExpansion(root);
+    if (!recipe) return;
+    const ok = await saveExpansionState(recipe);
+    statusMessage.set(ok ? 'State saved' : 'Could not save state');
+  }
+
+  async function clearSavedState() {
+    await clearExpansionState();
+    statusMessage.set('Saved state cleared');
   }
 
   $: breadcrumb = (() => {
@@ -51,6 +69,23 @@
           <path d="M10.5 1.5l1 2.5-2.5.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/>
         </svg>
         Reload
+      </button>
+    {/if}
+    {#if $config.allowSaveExpansionState}
+      <button
+        class="btn-ghost"
+        on:click={saveState}
+        title="Save current tree expansion so it restores on reopen"
+        disabled={!$treeRoot?.children?.length}
+      >
+        Save state
+      </button>
+      <button
+        class="btn-ghost"
+        on:click={clearSavedState}
+        title="Clear saved expansion so next open starts from root"
+      >
+        Clear saved state
       </button>
     {/if}
 

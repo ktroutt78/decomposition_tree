@@ -275,6 +275,54 @@ export function reapplyExpansion(oldNode, newNode, encMap, maxChildren, excludeN
   return { ...reDrilled, children: newChildren };
 }
 
+/**
+ * Serialize the tree expansion state to a minimal JSON-friendly recipe.
+ * Used for persisting to Tableau extension settings.
+ * @param {object} node - Root or any node with optional children
+ * @returns {object|null} Recipe { d, s, c } or null if no children
+ */
+export function serializeExpansion(node) {
+  if (!node?.children?.length) return null;
+  const drillDim = node.children[0]._drillDimension;
+  const sortOrder = node.children[0]._sortOrder || 'desc';
+  const c = node.children.map(child => {
+    const out = { l: child.label, v: !!child._collapsed };
+    const nested = serializeExpansion(child);
+    if (nested) out.e = nested;
+    return out;
+  });
+  return { d: drillDim, s: sortOrder, c };
+}
+
+/**
+ * Replay a saved expansion recipe onto a freshly built node (no children).
+ * If a dimension in the recipe is not in encMap.breakdown, aborts and returns the fresh node (start from root).
+ * @param {object} freshNode - Node with _rows, no children
+ * @param {object|null} recipe - Saved recipe from serializeExpansion
+ * @param {object} encMap - Encoding map with breakdown array
+ * @param {number} maxChildren
+ * @param {boolean} excludeNulls
+ * @returns {object} Node with children restored, or freshNode if replay aborted
+ */
+export function replayExpansion(freshNode, recipe, encMap, maxChildren, excludeNulls = false) {
+  if (!recipe || !recipe.d || !Array.isArray(recipe.c)) return freshNode;
+  const breakdownNames = (encMap.breakdown || []).map(f => f.name);
+  if (!breakdownNames.includes(recipe.d)) return freshNode;
+  const sortOrder = recipe.s === 'asc' ? 'asc' : 'desc';
+  const reDrilled = drillDown(freshNode, recipe.d, encMap, maxChildren, excludeNulls, sortOrder);
+  if (!reDrilled.children) return freshNode;
+  const newChildren = reDrilled.children.map(newChild => {
+    const recipeChild = recipe.c.find(rc => rc.l === newChild.label);
+    if (!recipeChild) return newChild;
+    let result = { ...newChild, _collapsed: !!recipeChild.v };
+    if (recipeChild.e && result._rows) {
+      result = replayExpansion(result, recipeChild.e, encMap, maxChildren, excludeNulls);
+    }
+    return result;
+  });
+  return { ...reDrilled, children: newChildren };
+}
+
 function extractTooltipData(rows, encMap) {
   const fields = encMap.tooltip || [];
   if (!fields.length || !rows.length) return {};

@@ -200,6 +200,63 @@ export async function clearMarkSelection() {
   }
 }
 
+// --- Expansion state persistence (EBL-013) ---
+
+const EXPANSION_SETTINGS_KEY = 'expansion_v1';
+const EXPANSION_MAX_BYTES = 50000;
+
+/**
+ * Load saved expansion recipe from Tableau extension settings.
+ * @returns {object|null} Parsed recipe or null if none/invalid
+ */
+export function loadExpansionState() {
+  if (typeof tableau === 'undefined' || typeof tableau.extensions?.settings?.get !== 'function') return null;
+  try {
+    const raw = tableau.extensions.settings.get(EXPANSION_SETTINGS_KEY);
+    if (!raw || typeof raw !== 'string') return null;
+    const recipe = JSON.parse(raw);
+    return recipe && recipe.d && Array.isArray(recipe.c) ? recipe : null;
+  } catch (e) {
+    console.warn('[DecompTree] loadExpansionState failed:', e);
+    return null;
+  }
+}
+
+/**
+ * Save expansion recipe to Tableau extension settings.
+ * @param {object} recipe - From serializeExpansion
+ * @returns {Promise<boolean>} true if saved, false if skipped (e.g. too large or not in Tableau)
+ */
+export async function saveExpansionState(recipe) {
+  if (typeof tableau === 'undefined' || typeof tableau.extensions?.settings?.set !== 'function') return false;
+  try {
+    const raw = JSON.stringify(recipe);
+    if (raw.length > EXPANSION_MAX_BYTES) {
+      console.warn('[DecompTree] Expansion state too large, not saved');
+      return false;
+    }
+    tableau.extensions.settings.set(EXPANSION_SETTINGS_KEY, raw);
+    await tableau.extensions.settings.saveAsync();
+    return true;
+  } catch (e) {
+    console.warn('[DecompTree] saveExpansionState failed:', e);
+    return false;
+  }
+}
+
+/**
+ * Clear saved expansion state from Tableau extension settings.
+ */
+export async function clearExpansionState() {
+  if (typeof tableau === 'undefined' || typeof tableau.extensions?.settings?.set !== 'function') return;
+  try {
+    tableau.extensions.settings.set(EXPANSION_SETTINGS_KEY, '');
+    await tableau.extensions.settings.saveAsync();
+  } catch (e) {
+    console.warn('[DecompTree] clearExpansionState failed:', e);
+  }
+}
+
 // --- Mock data for development outside Tableau ---
 
 function getMockEncodingMap() {
